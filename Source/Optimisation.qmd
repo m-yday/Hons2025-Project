@@ -1,0 +1,68 @@
+---
+title: "Optimisation Functions"
+format: html
+---
+
+
+
+```{r}
+#| label: "Optimisation Function Definitions"
+
+gradient_descent <- function(theta){
+  
+}
+
+random_search <- function(theta){
+  
+}
+
+newtons_method <- function(theta){
+  
+}
+
+genetic_algorithm <- function(Theta, weights=rep(1L,nrow(Theta)){
+  #default weights corresponds to even weighting across all genes
+  g <- nrow(Theta)
+  stopifnot(g%%2==0) #num of genes must be a multiple of 2 
+  p <- ncol(Theta)
+
+  parents <- select_genes(g,weights)
+  
+  
+  
+  crossover_mutate(theta1, theta2)
+}
+
+select_genes <- function(genes, probs){
+  
+}
+
+crossover_mutate <- function(theta1,theta2){
+  len <- length(theta1)
+  stopifnot(len == length(theta2)) # assert or error
+
+  #index <- 1:sample(len, 1)
+  #indices <- 1:index
+  
+  indices <- 1:sample(len, 1)
+  #note: will flip an amount of 'genes' from 1 to the amount of 'genes'. 
+  #So it is not possible to get the same genes out as you put in.
+  #the randomness that dictates whether or not a mutation happens will solely
+  #be managed by whatever calls the mutate function.
+  
+  new_gene1 <- c(theta1[indices],theta2[-indices])
+  new_gene2 <- c(theta2[indices],theta1[-indices])
+  
+  list(new_gene1, new_gene2) |> return()
+}
+
+```
+
+```{r}
+#| label: "Objective Function Definition"
+
+obj_placeholder_name <- function(){
+  
+}
+
+```  
