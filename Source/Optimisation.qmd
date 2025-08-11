@@ -21,7 +21,8 @@ newtons_method <- function(theta){
 }
 
 genetic_algorithm <- function(Theta, weights=rep(1L,nrow(Theta)){
-  #default weights corresponds to even weighting across all genes
+  # default 'weights' corresponds to even weighting across all genes 
+  # (weight=1 for all genes)
   g <- nrow(Theta)
   stopifnot(g%%2==0) #num of genes must be a multiple of 2 
   p <- ncol(Theta)
@@ -36,6 +37,8 @@ genetic_algorithm <- function(Theta, weights=rep(1L,nrow(Theta)){
 select_genes <- function(g, Theta, weights){
   
   foreach(1:(g/2)) %do% {
+    #random number from 1 to gene size.
+    #sampled with weighting applied
     sample(n=g, size=2, prob  = weights)
   }
   
