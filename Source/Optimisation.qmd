@@ -33,7 +33,11 @@ genetic_algorithm <- function(Theta, weights=rep(1L,nrow(Theta)){
   crossover_mutate(theta1, theta2)
 }
 
-select_genes <- function(genes, probs){
+select_genes <- function(g, Theta, weights){
+  
+  foreach(1:(g/2)) %do% {
+    sample(n=g, size=2, prob  = weights)
+  }
   
 }
 
