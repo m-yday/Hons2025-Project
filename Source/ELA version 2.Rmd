@@ -1,0 +1,1085 @@
+---
+title: "ELA version 2"
+output: pdf_document
+date: "2025-08-12"
+---
+
+```{r}
+#Evolutionary Learning Framework
+
+
+
+# Core utilities and validation
+
+
+set.seed(42)
+
+# Enhanced softmax with better numerical stability
+softmax <- function(x, tau = 1) {
+  if (!is.finite(tau) || tau <= 0) stop("tau must be > 0")
+  if (all(is.na(x))) return(rep(1/length(x), length(x)))
+  
+  x_clean <- x[is.finite(x)]
+  if (length(x_clean) == 0) return(rep(1/length(x), length(x)))
+  
+  z <- (x - max(x, na.rm = TRUE)) / tau
+  z <- pmax(z, -500)  # Prevent underflow
+  ez <- exp(z - max(z, na.rm = TRUE))
+  s <- sum(ez, na.rm = TRUE)
+  
+  if (!is.finite(s) || s == 0) {
+    rep(1/length(x), length(x))
+  } else {
+    ez / s
+  }
+}
+
+# Enhanced clamping with vectorization
+clamp <- function(x, lo, hi) {
+  if (length(lo) == 1) lo <- rep(lo, length(x))
+  if (length(hi) == 1) hi <- rep(hi, length(x))
+  pmin(pmax(x, lo), hi)
+}
+
+# Comprehensive population statistics
+pop_stats <- function(P, f) {
+  list(
+    fitness = c(best = max(f, na.rm = TRUE), 
+                mean = mean(f, na.rm = TRUE), 
+                median = median(f, na.rm = TRUE),
+                std = sd(f, na.rm = TRUE),
+                q25 = quantile(f, 0.25, na.rm = TRUE),
+                q75 = quantile(f, 0.75, na.rm = TRUE)),
+    diversity = pop_diversity(P),
+    convergence = pop_convergence(P)
+  )
+}
+
+# Population diversity (spread in parameter space)
+pop_diversity <- function(P) {
+  if (ncol(P) <= 1) return(0)
+  centroid <- rowMeans(P, na.rm = TRUE)
+  distances <- sqrt(colSums((P - centroid)^2, na.rm = TRUE))
+  mean(distances, na.rm = TRUE)
+}
+
+# Population convergence (parameter std dev)
+pop_convergence <- function(P) {
+  if (ncol(P) <= 1) return(0)
+  param_std <- apply(P, 1, sd, na.rm = TRUE)
+  mean(param_std, na.rm = TRUE)
+}
+
+# Enhanced parameter validation
+validate_ea_params <- function(fitness_fn, dim, lower, upper, pop_size, gens, 
+                              pcross, elitism, patience, eval_budget) {
+  # Basic type checks
+  stopifnot(
+    is.function(fitness_fn),
+    is.numeric(dim) && length(dim) == 1 && dim > 0,
+    is.numeric(pop_size) && pop_size > 0,
+    is.numeric(gens) && gens > 0,
+    is.numeric(pcross) && pcross >= 0 && pcross <= 1,
+    is.numeric(elitism) && elitism >= 0 && elitism < pop_size,
+    is.numeric(patience) && patience > 0,
+    is.numeric(eval_budget) && eval_budget > 0
+  )
+  
+  # Bounds validation
+  lower <- rep(lower, length.out = dim)
+  upper <- rep(upper, length.out = dim)
+  
+  if (any(upper <= lower)) {
+    stop("All upper bounds must be > lower bounds")
+  }
+  
+  # Test fitness function
+  test_point <- runif(dim, min(lower), max(upper))
+  test_fitness <- tryCatch(
+    fitness_fn(test_point),
+    error = function(e) stop(paste("Fitness function error:", e$message))
+  )
+  
+  if (!is.numeric(test_fitness) || length(test_fitness) != 1 || !is.finite(test_fitness)) {
+    stop("Fitness function must return a single finite numeric value")
+  }
+  
+  list(lower = lower, upper = upper)
+}
+
+
+# Selection methods
+
+
+select_parent <- function(f, mode = c("proportionate", "tournament", "rank"), 
+                         k = 3, tau = 1) {
+  mode <- match.arg(mode)
+  n <- length(f)
+  
+  if (n == 1) return(1)
+  
+  switch(mode,
+    "proportionate" = {
+      if (all(f <= 0)) return(sample.int(n, 1))
+      probs <- softmax(f, tau = tau)
+      sample.int(n, 1, prob = probs)
+    },
+    
+    "tournament" = {
+      k <- min(k, n)
+      idx <- sample.int(n, k)
+      idx[which.max(f[idx])]
+    },
+    
+    "rank" = {
+      ranks <- rank(f, ties.method = "random")
+      probs <- ranks / sum(ranks)
+      sample.int(n, 1, prob = probs)
+    }
+  )
+}
+
+
+# Crossover operator
+
+
+crossover_single_point <- function(pa, pb) {
+  d <- length(pa)
+  if (d == 1L) return((pa + pb) / 2)
+  
+  q <- sample.int(d - 1, 1)
+  c(pa[1:q], pb[(q + 1):d])
+}
+
+crossover_blx <- function(pa, pb, alpha = 0.5) {
+  v <- runif(length(pa), min = -alpha, max = 1 + alpha)
+  v * pa + (1 - v) * pb
+}
+
+crossover_sbx <- function(pa, pb, lower, upper, eta_c = 10) {
+  d <- length(pa)
+  u <- runif(d)
+  
+  beta <- ifelse(u <= 0.5, 
+                (2 * u)^(1 / (eta_c + 1)), 
+                (1 / (2 * (1 - u)))^(1 / (eta_c + 1)))
+  
+  c1 <- 0.5 * ((1 + beta) * pa + (1 - beta) * pb)
+  c2 <- 0.5 * ((1 - beta) * pa + (1 + beta) * pb)
+  
+  child <- if (runif(1) < 0.5) c1 else c2
+  clamp(child, lower, upper)
+}
+
+
+# Mutation operators
+
+
+mutate_gaussian <- function(x, sigma_vec, pm = NULL) {
+  d <- length(x)
+  if (is.null(pm)) pm <- 1 / d
+  
+  mask <- runif(d) < pm
+  if (any(mask)) {
+    x[mask] <- x[mask] + rnorm(sum(mask), 0, sigma_vec[mask])
+  }
+  x
+}
+
+mutate_poly <- function(x, lower, upper, eta_m = 20, pm = NULL) {
+  d <- length(x)
+  if (is.null(pm)) pm <- 1 / d
+  
+  lo <- rep(lower, length.out = d)
+  hi <- rep(upper, length.out = d)
+  rng <- hi - lo
+  
+  if (any(rng <= 0)) stop("upper must be > lower for all genes")
+  
+  y <- (x - lo) / rng
+  mask <- runif(d) < pm
+  if (!any(mask)) return(x)
+  
+  u <- runif(d)
+  mut_pow <- 1 / (eta_m + 1)
+  delta1 <- y
+  delta2 <- 1 - y
+  deltaq <- numeric(d)
+  
+  idx <- which(mask)
+  for (i in idx) {
+    if (u[i] <= 0.5) {
+      xy <- 1 - delta1[i]
+      val <- 2 * u[i] + (1 - 2 * u[i]) * (xy^(eta_m + 1))
+      deltaq[i] <- (val^mut_pow) - 1
+    } else {
+      xy <- 1 - delta2[i]
+      val <- 2 * (1 - u[i]) + 2 * (u[i] - 0.5) * (xy^(eta_m + 1))
+      deltaq[i] <- 1 - (val^mut_pow)
+    }
+  }
+  
+  y_new <- clamp(y + deltaq, 0, 1)
+  out <- lo + y_new * rng
+  out[!mask] <- x[!mask]
+  
+  clamp(out, lo, hi)
+}
+
+# MAIN EVOLUTIONARY ALGORITHM
+
+evolve_real_enhanced <- function(
+  fitness_fn, dim, lower, upper,
+  pop_size = 100, gens = 200,
+  
+  # Selection parameters
+  selection = c("tournament", "proportionate", "rank"),
+  tournament_k = 3, tau = 1,
+  
+  # Crossover parameters  
+  crossover = c("sbx", "blx", "single"),
+  alpha = 0.5, eta_c = 10, pcross = 0.9,
+  
+  # Mutation parameters
+  mutation = c("poly", "gaussian"),
+  mut_sd0 = 0.2, mut_sd_min = 1e-3, mut_sd_decay = 0.95,
+  eta_m = 20, pmutation = NULL,
+  
+  # Population management
+  elitism = 2, beta_replace = 0.0,
+  
+  # Termination & monitoring
+  eval_budget = Inf, patience = 30, min_delta = 1e-8,
+  log_freq = 10, verbose = TRUE, seed = NULL
+) {
+  
+  # Seed management
+  if (!is.null(seed)) {
+    old_seed <- NULL
+    if (exists(".Random.seed", .GlobalEnv)) old_seed <- .Random.seed
+    on.exit({
+      if (!is.null(old_seed)) .Random.seed <<- old_seed
+    }, add = TRUE)
+    set.seed(seed)
+  }
+  
+  # Parameter validation and setup
+  selection <- match.arg(selection)
+  crossover <- match.arg(crossover)
+  mutation <- match.arg(mutation)
+  
+  bounds <- validate_ea_params(fitness_fn, dim, lower, upper, pop_size, gens,
+                              pcross, elitism, patience, eval_budget)
+  lower <- bounds$lower
+  upper <- bounds$upper
+  range <- upper - lower
+  
+  # Initialize population
+  P <- sapply(1:pop_size, function(i) runif(dim, lower, upper))
+  f <- apply(P, 2, fitness_fn)
+  
+  if (!all(is.finite(f))) {
+    stop("Non-finite fitness values at initialization")
+  }
+  
+  evals <- pop_size
+  
+  # Best solution tracking
+  best_idx <- which.max(f)
+  best <- list(f = f[best_idx], theta = P[, best_idx], generation = 0)
+  
+  # Pre-allocate history
+  hist <- data.frame(
+    generation = integer(gens + 1),
+    best = numeric(gens + 1),
+    mean = numeric(gens + 1),
+    median = numeric(gens + 1),
+    diversity = numeric(gens + 1),
+    mut_sd = numeric(gens + 1)
+  )
+  
+  # Initial statistics
+  stats <- pop_stats(P, f)
+  hist[1, ] <- c(0, stats$fitness["best"], stats$fitness["mean"], 
+                 stats$fitness["median"], stats$diversity, mut_sd0)
+  
+  if (verbose) {
+    cat(sprintf("Gen %3d | best=%.6f | mean=%.6f | diversity=%.4f\n", 
+                0, best$f, stats$fitness["mean"], stats$diversity))
+  }
+  
+  # Evolution loop
+  no_improve <- 0L
+  stop_reason <- "gens_exhausted"
+  mut_sd <- mut_sd0
+  
+  for (g in 1:gens) {
+    if (evals >= eval_budget) {
+      stop_reason <- "eval_budget"
+      break
+    }
+    
+    # Update mutation step size
+    mut_sd <- max(mut_sd_min, mut_sd * mut_sd_decay)
+    sigma_vec <- mut_sd * range
+    
+    # Elite preservation
+    elite_idx <- order(f, decreasing = TRUE)[1:elitism]
+    elites <- P[, elite_idx, drop = FALSE]
+    elites_f <- f[elite_idx]
+    
+    # Generate offspring
+    n_off <- pop_size - elitism
+    Off <- matrix(NA_real_, nrow = dim, ncol = n_off)
+    
+    for (k in 1:n_off) {
+      # Parent selection
+      i <- select_parent(f, selection, tournament_k, tau)
+      j <- select_parent(f, selection, tournament_k, tau)
+      pa <- P[, i]
+      pb <- P[, j]
+      
+      # Crossover
+      if (runif(1) < pcross) {
+        child <- switch(crossover,
+          "sbx" = crossover_sbx(pa, pb, lower, upper, eta_c),
+          "blx" = crossover_blx(pa, pb, alpha),
+          "single" = crossover_single_point(pa, pb)
+        )
+      } else {
+        child <- if (runif(1) < 0.5) pa else pb
+      }
+      
+      # Mutation
+      child <- switch(mutation,
+        "gaussian" = mutate_gaussian(child, sigma_vec, pm = pmutation),
+        "poly" = mutate_poly(child, lower, upper, eta_m = eta_m, pm = pmutation)
+      )
+      
+      # Random replacement
+      if (runif(1) < beta_replace) {
+        child <- runif(dim, lower, upper)
+      }
+      
+      Off[, k] <- clamp(child, lower, upper)
+    }
+    
+    # Evaluate offspring
+    f_off <- apply(Off, 2, fitness_fn)
+    evals <- evals + n_off
+    
+    if (!all(is.finite(f_off))) {
+      stop("Non-finite fitness in offspring")
+    }
+    
+    # Combine populations
+    P <- cbind(elites, Off)
+    f <- c(elites_f, f_off)
+    
+    # Statistics
+    stats <- pop_stats(P, f)
+    b <- stats$fitness["best"]
+    
+    # Update history
+    hist[g + 1, ] <- c(g, b, stats$fitness["mean"], 
+                       stats$fitness["median"], stats$diversity, mut_sd)
+    
+    # Best solution tracking
+    if (b > best$f + min_delta) {
+      best <- list(f = b, theta = P[, which.max(f)], generation = g)
+      no_improve <- 0L
+    } else {
+      no_improve <- no_improve + 1L
+    }
+    
+    # Early stopping
+    if (no_improve >= patience) {
+      stop_reason <- "early_stopping"
+      break
+    }
+    
+    # Logging
+    if (verbose && (g %% log_freq == 0L)) {
+      cat(sprintf("Gen %3d | best=%.6f | mean=%.6f | diversity=%.4f\n",
+                  g, b, stats$fitness["mean"], stats$diversity))
+    }
+  }
+  
+  # Return results
+  list(
+    best_fit = best$f,
+    best_theta = best$theta,
+    best_generation = best$generation,
+    history = hist[1:(g + 1), ],
+    final_population = P,
+    final_fitness = f,
+    evaluations = evals,
+    stop_reason = stop_reason
+  )
+}
+
+# Test functions and demos
+
+
+# Test function: Rastrigin (minimize, so we negate for maximization)
+rastrigin <- function(x) {
+  d <- length(x)
+  -(10 * d + sum(x^2 - 10 * cos(2 * pi * x)))
+}
+
+# Simple demo function
+demo_simple <- function() {
+  cat("=== Simple EA Demo ===\n")
+  
+  # Test on 5D Rastrigin
+  result <- evolve_real_enhanced(
+    fitness_fn = rastrigin,
+    dim = 5,
+    lower = -5.12,
+    upper = 5.12,
+    pop_size = 100,
+    gens = 200,
+    selection = "tournament",
+    crossover = "sbx",
+    mutation = "poly",
+    verbose = TRUE,
+    seed = 42
+  )
+  
+  cat(sprintf("\nFinal Results:\n"))
+  cat(sprintf("Best fitness: %.6f\n", result$best_fit))
+  cat(sprintf("Evaluations: %d\n", result$evaluations))
+  cat(sprintf("Stop reason: %s\n", result$stop_reason))
+  cat(sprintf("Best solution: %s\n", paste(round(result$best_theta, 4), collapse = ", ")))
+  
+  # Plot convergence
+  hist <- result$history
+  plot(hist$generation, hist$best, type = "l", lwd = 2,
+       xlab = "Generation", ylab = "Best Fitness", 
+       main = "EA Convergence on Rastrigin Function")
+  lines(hist$generation, hist$mean, col = "red", lty = 2)
+  legend("bottomright", c("Best", "Mean"), col = c("black", "red"), lty = c(1, 2))
+  
+  result
+}
+
+# Enhanced drone game components (simplified version)
+make_field <- function(J = 40, r = 0.08, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  obstacles <- cbind(runif(J, -0.5, 1), runif(J, -1, 1))
+  list(obstacles = obstacles, radius = r)
+}
+
+check_status <- function(x, field, k, kmax) {
+  if (x[2] >= 1) return(1)  # Success
+  if (abs(x[1]) >= 1 || x[2] <= -1 || k > kmax) return(-1)  # Failure
+  
+  # Check collision with obstacles
+  distances <- sqrt(colSums((t(field$obstacles) - x)^2))
+  if (any(distances <= field$radius)) return(-1)
+  
+  0  # Continue
+}
+
+make_controller <- function() {
+  # Simple 2-5-2 network
+  n_params <- 2*5 + 5 + 5*2 + 2  # W1 + b1 + W2 + b2
+  
+  unpack <- function(theta) {
+    W1 <- matrix(theta[1:10], nrow = 5, ncol = 2)
+    b1 <- theta[11:15]
+    W2 <- matrix(theta[16:25], nrow = 2, ncol = 5)
+    b2 <- theta[26:27]
+    list(W1 = W1, b1 = b1, W2 = W2, b2 = b2)
+  }
+  
+  forward <- function(x, theta) {
+    params <- unpack(theta)
+    h <- tanh(x %*% t(params$W1) + matrix(params$b1, nrow(x), 5, byrow = TRUE))
+    y <- h %*% t(params$W2) + matrix(params$b2, nrow(x), 2, byrow = TRUE)
+    pmin(pmax(y, -1), 1)
+  }
+  
+  list(n_params = n_params, forward = forward, unpack = unpack)
+}
+
+simulate_game <- function(theta, controller, field, delta = 0.05, kmax = 100, x0 = NULL) {
+  if (is.null(x0)) x <- c(runif(1, -0.8, 0.8), -1) else x <- x0
+  
+  traj <- matrix(NA_real_, nrow = kmax + 1, ncol = 2)
+  traj[1, ] <- x
+  
+  for (k in 1:kmax) {
+    u <- as.numeric(controller$forward(matrix(x, nrow = 1), theta))
+    x <- x + delta * u
+    traj[k + 1, ] <- x
+    
+    status <- check_status(x, field, k, kmax)
+    if (status != 0) {
+      return(list(status = status, traj = traj[1:(k + 1), , drop = FALSE]))
+    }
+  }
+  
+  list(status = -1, traj = traj)
+}
+
+fitness_drone <- function(theta, controller, field, T = 10, delta = 0.05, kmax = 100) {
+  wins <- 0
+  for (t in 1:T) {
+    result <- simulate_game(theta, controller, field, delta, kmax)
+    if (result$status == 1) wins <- wins + 1
+  }
+  wins / T
+}
+
+demo_drone <- function() {
+  cat("=== Enhanced Drone Demo ===\n")
+  
+  # Create field and controller
+  field <- make_field(J = 30, r = 0.08, seed = 123)
+  controller <- make_controller()
+  
+  # Fitness function
+  fitness_fn <- function(theta) {
+    fitness_drone(theta, controller, field, T = 15, delta = 0.05, kmax = 150)
+  }
+  
+  # Run optimization
+  result <- evolve_real_enhanced(
+    fitness_fn = fitness_fn,
+    dim = controller$n_params,
+    lower = -2,
+    upper = 2,
+    pop_size = 150,
+    gens = 300,
+    selection = "tournament",
+    crossover = "sbx",
+    mutation = "poly",
+    patience = 80,
+    verbose = TRUE,
+    seed = 7
+  )
+  
+  cat(sprintf("\nDrone Results:\n"))
+  cat(sprintf("Best win rate: %.1f%%\n", result$best_fit * 100))
+  cat(sprintf("Evaluations: %d\n", result$evaluations))
+  cat(sprintf("Stop reason: %s\n", result$stop_reason))
+  
+  # Visualize performance
+  par(mfrow = c(1, 2))
+  
+  # Convergence plot
+  hist <- result$history
+  plot(hist$generation, hist$best, type = "l", lwd = 2,
+       xlab = "Generation", ylab = "Win Rate", 
+       main = "Drone Training Progress")
+  
+  # Trajectory visualization
+  plot(NA, xlim = c(-1, 1), ylim = c(-1, 1), 
+       xlab = "X", ylab = "Y", main = "Drone Trajectories")
+  
+  # Draw field
+  rect(-1, -1, 1, 1, border = "black")
+  points(field$obstacles[, 1], field$obstacles[, 2], pch = 16, col = "red", cex = 0.8)
+  abline(h = 1, col = "green", lwd = 3)  # Goal line
+  
+  # Show some trajectories with best solution
+  for (i in 1:20) {
+    sim_result <- simulate_game(result$best_theta, controller, field)
+    color <- if (sim_result$status == 1) "blue" else "gray"
+    lines(sim_result$traj[, 1], sim_result$traj[, 2], col = color, lwd = 1.5)
+  }
+  
+  legend("topright", c("Success", "Failure", "Obstacles", "Goal"), 
+         col = c("blue", "gray", "red", "green"), 
+         pch = c(15, 15, 16, 15), lty = c(1, 1, 0, 1))
+  
+  par(mfrow = c(1, 1))
+  result
+}
+
+
+# EXAMPLE 
+
+
+# demo_simple()
+# demo_drone()
+
+
+```
+
+```{r}
+
+demo_simple()
+
+
+
+```
+
+```{r}
+
+
+
+demo_drone()
+
+
+
+```
+
+
+```{r}
+# Benchmarking Framework for Evolutionary vs Traditional Optimization
+# Investigating: Is EA really "evolutionary" or just sophisticated search?
+
+library(parallel)
+
+#Baseline optimisation methods
+
+# Pure Random Search with elitism
+random_search <- function(fitness_fn, dim, lower, upper, eval_budget = 10000, 
+                         elite_size = 10, verbose = FALSE) {
+  
+  # Initialize with random samples
+  best_f <- -Inf
+  best_theta <- NULL
+  elite_pop <- matrix(NA, dim, elite_size)
+  elite_f <- rep(-Inf, elite_size)
+  
+  evals <- 0
+  history <- data.frame(evaluation = integer(), best = numeric(), stringsAsFactors = FALSE)
+  
+  while (evals < eval_budget) {
+    # Generate random candidate
+    candidate <- runif(dim, lower, upper)
+    f <- fitness_fn(candidate)
+    evals <- evals + 1
+    
+    # Update best
+    if (f > best_f) {
+      best_f <- f
+      best_theta <- candidate
+    }
+    
+    # Update elite population
+    worst_elite <- which.min(elite_f)
+    if (f > elite_f[worst_elite]) {
+      elite_pop[, worst_elite] <- candidate
+      elite_f[worst_elite] <- f
+    }
+    
+    # Log progress
+    if (evals %% 100 == 0) {
+      history <- rbind(history, data.frame(evaluation = evals, best = best_f))
+      if (verbose && evals %% 1000 == 0) {
+        cat(sprintf("Eval %d: best = %.6f\n", evals, best_f))
+      }
+    }
+  }
+  
+  list(
+    best_fit = best_f,
+    best_theta = best_theta,
+    history = history,
+    evaluations = evals,
+    method = "random_search"
+  )
+}
+
+# Simulated Annealing
+simulated_annealing <- function(fitness_fn, dim, lower, upper, eval_budget = 10000,
+                               T0 = 1.0, alpha = 0.95, step_size = 0.1, verbose = FALSE) {
+  
+  # Initialize
+  current <- runif(dim, lower, upper)
+  current_f <- fitness_fn(current)
+  
+  best <- current
+  best_f <- current_f
+  
+  T <- T0
+  evals <- 1
+  history <- data.frame(evaluation = integer(), best = numeric(), stringsAsFactors = FALSE)
+  
+  while (evals < eval_budget) {
+    # Generate neighbor
+    neighbor <- current + rnorm(dim, 0, step_size * (upper - lower))
+    neighbor <- pmax(pmin(neighbor, upper), lower)  # Clamp to bounds
+    
+    neighbor_f <- fitness_fn(neighbor)
+    evals <- evals + 1
+    
+    # Accept/reject
+    delta <- neighbor_f - current_f
+    if (delta > 0 || runif(1) < exp(delta / T)) {
+      current <- neighbor
+      current_f <- neighbor_f
+      
+      if (current_f > best_f) {
+        best <- current
+        best_f <- current_f
+      }
+    }
+    
+    # Cool down
+    T <- T * alpha
+    
+    # Log progress
+    if (evals %% 100 == 0) {
+      history <- rbind(history, data.frame(evaluation = evals, best = best_f))
+      if (verbose && evals %% 1000 == 0) {
+        cat(sprintf("Eval %d: best = %.6f, T = %.6f\n", evals, best_f, T))
+      }
+    }
+  }
+  
+  list(
+    best_fit = best_f,
+    best_theta = best,
+    history = history,
+    evaluations = evals,
+    method = "simulated_annealing"
+  )
+}
+
+# Gradient-based optimization (if fitness is differentiable)
+gradient_based <- function(fitness_fn, grad_fn, dim, lower, upper, 
+                          eval_budget = 10000, lr = 0.01, verbose = FALSE) {
+  
+  # Initialize
+  theta <- runif(dim, lower, upper)
+  
+  best_f <- fitness_fn(theta)
+  best_theta <- theta
+  evals <- 1
+  
+  history <- data.frame(evaluation = integer(), best = numeric(), stringsAsFactors = FALSE)
+  
+  while (evals < eval_budget) {
+    # Compute gradient
+    grad <- grad_fn(theta)
+    
+    # Update parameters
+    theta <- theta + lr * grad
+    theta <- pmax(pmin(theta, upper), lower)  # Clamp to bounds
+    
+    # Evaluate
+    f <- fitness_fn(theta)
+    evals <- evals + 1
+    
+    if (f > best_f) {
+      best_f <- f
+      best_theta <- theta
+    }
+    
+    # Log progress
+    if (evals %% 100 == 0) {
+      history <- rbind(history, data.frame(evaluation = evals, best = best_f))
+      if (verbose && evals %% 1000 == 0) {
+        cat(sprintf("Eval %d: best = %.6f\n", evals, best_f))
+      }
+    }
+  }
+  
+  list(
+    best_fit = best_f,
+    best_theta = best_theta,
+    history = history,
+    evaluations = evals,
+    method = "gradient_based"
+  )
+}
+
+
+# EA variants
+
+# EA with crossover disabled (mutation + selection only)
+ea_no_crossover <- function(fitness_fn, dim, lower, upper, eval_budget = 10000,
+                           pop_size = 50, verbose = FALSE) {
+  # Use your existing EA but set pcross = 0
+  # Convert eval_budget to generations
+  gens <- ceiling(eval_budget / pop_size)
+  
+  result <- evolve_real_enhanced(
+    fitness_fn = fitness_fn,
+    dim = dim,
+    lower = lower,
+    upper = upper,
+    pop_size = pop_size,
+    gens = gens,
+    pcross = 0.0,  # No crossover!
+    mutation = "poly",
+    selection = "tournament",
+    verbose = verbose
+  )
+  
+  # Convert to standard format
+  list(
+    best_fit = result$best_fit,
+    best_theta = result$best_theta,
+    history = data.frame(
+      evaluation = result$history$generation * pop_size,
+      best = result$history$best
+    ),
+    evaluations = result$evaluations,
+    method = "ea_no_crossover"
+  )
+}
+
+# EA with mutation disabled (crossover + selection only)
+ea_no_mutation <- function(fitness_fn, dim, lower, upper, eval_budget = 10000,
+                          pop_size = 50, verbose = FALSE) {
+  gens <- ceiling(eval_budget / pop_size)
+  
+  result <- evolve_real_enhanced(
+    fitness_fn = fitness_fn,
+    dim = dim,
+    lower = lower,
+    upper = upper,
+    pop_size = pop_size,
+    gens = gens,
+    pcross = 0.9,
+    pmutation = 0.0,  # No mutation!
+    selection = "tournament",
+    verbose = verbose
+  )
+  
+  list(
+    best_fit = result$best_fit,
+    best_theta = result$best_theta,
+    history = data.frame(
+      evaluation = result$history$generation * pop_size,
+      best = result$history$best
+    ),
+    evaluations = result$evaluations,
+    method = "ea_no_mutation"
+  )
+}
+
+# Benchmark test functions
+
+
+# Unimodal: Sphere function (should favor gradient methods)
+sphere <- function(x) -sum(x^2)
+
+# Multimodal: Rastrigin (should favor population-based methods)
+rastrigin <- function(x) {
+  d <- length(x)
+  -(10 * d + sum(x^2 - 10 * cos(2 * pi * x)))
+}
+
+# Multimodal: Ackley function
+ackley <- function(x) {
+  d <- length(x)
+  a <- 20
+  b <- 0.2
+  c <- 2 * pi
+  term1 <- -a * exp(-b * sqrt(sum(x^2) / d))
+  term2 <- -exp(sum(cos(c * x)) / d)
+  -(term1 + term2 + a + exp(1))
+}
+
+# Non-differentiable: Step function
+step_function <- function(x) -sum(floor(x + 0.5)^2)
+
+# Create test suite
+test_functions <- list(
+  sphere = list(fn = sphere, dim = 10, lower = -5, upper = 5, optimum = 0),
+  rastrigin = list(fn = rastrigin, dim = 10, lower = -5.12, upper = 5.12, optimum = 0),
+  ackley = list(fn = ackley, dim = 10, lower = -32, upper = 32, optimum = 0),
+  step = list(fn = step_function, dim = 10, lower = -5, upper = 5, optimum = 0)
+)
+
+
+# Benchmarking framework
+
+
+run_single_benchmark <- function(method_fn, method_name, test_fn, test_info, 
+                                eval_budget = 10000, seed = 42) {
+  set.seed(seed)
+  
+  start_time <- Sys.time()
+  result <- method_fn(
+    fitness_fn = test_info$fn,
+    dim = test_info$dim,
+    lower = test_info$lower,
+    upper = test_info$upper,
+    eval_budget = eval_budget,
+    verbose = FALSE
+  )
+  end_time <- Sys.time()
+  
+  # Calculate metrics
+  gap_to_optimum <- abs(result$best_fit - test_info$optimum)
+  
+  data.frame(
+    method = method_name,
+    test_function = test_fn,
+    best_fitness = result$best_fit,
+    gap_to_optimum = gap_to_optimum,
+    evaluations = result$evaluations,
+    runtime_sec = as.numeric(difftime(end_time, start_time, units = "secs")),
+    seed = seed,
+    stringsAsFactors = FALSE
+  )
+}
+
+comprehensive_benchmark <- function(eval_budget = 10000, n_runs = 10, n_cores = 1) {
+  
+  # Define methods to test
+  methods <- list(
+    random_search = random_search,
+    simulated_annealing = simulated_annealing,
+    ea_full = function(fitness_fn, dim, lower, upper, eval_budget, verbose = FALSE) {
+      gens <- ceiling(eval_budget / 50)
+      result <- evolve_real_enhanced(fitness_fn, dim, lower, upper, 
+                                   pop_size = 50, gens = gens, verbose = verbose)
+      list(best_fit = result$best_fit, best_theta = result$best_theta,
+           evaluations = result$evaluations, method = "ea_full")
+    },
+    ea_no_crossover = ea_no_crossover,
+    ea_no_mutation = ea_no_mutation
+  )
+  
+  # Generate all combinations
+  combinations <- expand.grid(
+    method = names(methods),
+    test_fn = names(test_functions),
+    run = 1:n_runs,
+    stringsAsFactors = FALSE
+  )
+  
+  cat(sprintf("Running %d benchmark combinations...\n", nrow(combinations)))
+  
+  # Run benchmarks
+  if (n_cores > 1 && requireNamespace("parallel", quietly = TRUE)) {
+    cl <- makeCluster(n_cores)
+    clusterEvalQ(cl, {
+      # Export necessary objects to cluster
+    })
+    
+    results <- parApply(cl, combinations, 1, function(row) {
+      run_single_benchmark(
+        method_fn = methods[[row$method]],
+        method_name = row$method,
+        test_fn = row$test_fn,
+        test_info = test_functions[[row$test_fn]],
+        eval_budget = eval_budget,
+        seed = 42 + as.numeric(row$run)
+      )
+    })
+    
+    stopCluster(cl)
+    results <- do.call(rbind, results)
+  } else {
+    # Sequential execution
+    results <- data.frame()
+    
+    for (i in 1:nrow(combinations)) {
+      row <- combinations[i, ]
+      cat(sprintf("Running %s on %s (run %d/%d)\n", 
+                  row$method, row$test_fn, row$run, n_runs))
+      
+      result <- run_single_benchmark(
+        method_fn = methods[[row$method]],
+        method_name = row$method,
+        test_fn = row$test_fn,
+        test_info = test_functions[[row$test_fn]],
+        eval_budget = eval_budget,
+        seed = 42 + as.numeric(row$run)
+      )
+      
+      results <- rbind(results, result)
+    }
+  }
+  
+  results
+}
+
+# Analysis and visualization functions
+analyze_results <- function(results) {
+  library(dplyr)
+  
+  # Summary statistics
+  summary_stats <- results %>%
+    group_by(method, test_function) %>%
+    summarise(
+      mean_fitness = mean(best_fitness),
+      median_fitness = median(best_fitness),
+      std_fitness = sd(best_fitness),
+      mean_gap = mean(gap_to_optimum),
+      median_gap = median(gap_to_optimum),
+      success_rate = mean(gap_to_optimum < 1e-3),
+      mean_runtime = mean(runtime_sec),
+      .groups = 'drop'
+    )
+  
+  print(summary_stats)
+  
+  # Statistical tests
+  cat("\n=== Statistical Significance Tests ===\n")
+  for (test_fn in unique(results$test_function)) {
+    cat(sprintf("\n%s:\n", test_fn))
+    test_data <- results[results$test_function == test_fn, ]
+    
+    # Compare EA variants
+    ea_full <- test_data[test_data$method == "ea_full", "best_fitness"]
+    ea_no_cross <- test_data[test_data$method == "ea_no_crossover", "best_fitness"]
+    ea_no_mut <- test_data[test_data$method == "ea_no_mutation", "best_fitness"]
+    
+    if (length(ea_full) > 0 && length(ea_no_cross) > 0) {
+      p_val <- wilcox.test(ea_full, ea_no_cross)$p.value
+      cat(sprintf("EA vs EA-no-crossover p-value: %.4f\n", p_val))
+    }
+    
+    if (length(ea_full) > 0 && length(ea_no_mut) > 0) {
+      p_val <- wilcox.test(ea_full, ea_no_mut)$p.value
+      cat(sprintf("EA vs EA-no-mutation p-value: %.4f\n", p_val))
+    }
+  }
+  
+  summary_stats
+}
+
+plot_benchmark_results <- function(results) {
+  library(ggplot2)
+  library(dplyr)
+  
+  # Performance comparison
+  p1 <- ggplot(results, aes(x = method, y = best_fitness, fill = method)) +
+    geom_boxplot() +
+    facet_wrap(~test_function, scales = "free_y") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Optimization Performance Comparison",
+         x = "Method", y = "Best Fitness") +
+    theme_minimal()
+  
+  print(p1)
+  
+  # Runtime comparison
+  p2 <- ggplot(results, aes(x = method, y = runtime_sec, fill = method)) +
+    geom_boxplot() +
+    facet_wrap(~test_function) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Runtime Comparison",
+         x = "Method", y = "Runtime (seconds)") +
+    theme_minimal()
+  
+  print(p2)
+}
+
+
+
+results <- comprehensive_benchmark(eval_budget = 5000, n_runs = 20)
+ summary_stats <- analyze_results(results)
+plot_benchmark_results(results)
+
+
+
+
+
+
+
+
+
+
+```
