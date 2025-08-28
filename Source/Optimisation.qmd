@@ -4,9 +4,44 @@ format: html
 ---
 
 
+Some code is taken / adapted from Analytics Assignment 2.
+
+# Setup
+
+```{r}
+#| label: load-libraries
+library(tidyverse,attach.required = T)
+library(future)
+
+library(doFuture)
+library(progressr)
+library(parallelly)
+```
+
+```{r}
+#| label: parallel-computing-setup
+
+options(parallelly.availableCores.omit = 1)
+if(supportsMulticore()) # multicore = mac, linux, etc. (outside of RStudio)
+  plan(multicore) else plan(multisession) #multisession = windows and other
+on.exit(plan(sequential)) # to ensure that the workers are correctly shut down
+```
+
+```{r}
+#| label: datavis-setup
+
+colours <- viridisLite::viridis(n=3,alpha=0.7,begin=0.2,end=0.8,option="B")
+base_theme <- theme_minimal() + 
+  theme(aspect.ratio=1,legend.position = 'bottom')
+theme_set(base_theme) # setting the default theme for ggplot 
+```
+
+# Optimisation Functions
 
 ```{r}
 #| label: "Optimisation Function Definitions"
+
+# from scratch
 
 gradient_descent <- function(theta){
   
@@ -20,47 +55,111 @@ newtons_method <- function(theta){
   
 }
 
-genetic_algorithm <- function(Theta, weights=rep(1L,nrow(Theta)){
-  # default 'weights' corresponds to even weighting across all genes 
-  # (weight=1 for all genes)
+```
+
+```{r}
+#| label: genetic-algorithm
+
+# this genetic algorithm does not make use of a larger 'population' to which 
+# the offspring are added to. The offspring become the entire population for 
+# the next generation. 
+# Parents are selected from the resulting population weighted by a
+# performance metric.
+
+# single-point crossover
+genetic_algorithm <- function(Theta, scores=rep(1L,nrow(Theta))){
+  # default 'scores' corresponds to even weighting across all genes 
+  # (score=1 for all genomes)
   g <- nrow(Theta)
-  stopifnot(g%%2==0) #num of genes must be a multiple of 2 
-  p <- ncol(Theta)
-
-  parents <- select_genes(g,weights)
+  stopifnot(g%%2==0)  #num of genomes must be a multiple of 2 
+  p <- ncol(Theta)    #num of genes
   
+  Theta_new <- crossover_recombination(Theta, scores) #g and p can be calculated within, but is it cheaper to perhaps calculate once and pass it along each generation?
   
-  
-  crossover_mutate(theta1, theta2)
 }
 
-select_genes <- function(g, Theta, weights){
+crossover_recombination <- function(Theta,scores){
+  g <- nrow(Theta)    # num genomes
+  stopifnot(g%%2==0)  # num of genomes must be a multiple of 2 
+  n <- g/2            # num pairs
+  p <- ncol(Theta)    # num genes
+  crossmat <- create_crossover_matrix(g,n,p,scores)
+ 
+  # should be able to post/premultiply in a way that gives us the resulting matrix we want
+  # PRE multiply
+  # each row of the matrix we premult by will represent the target row
+  # the column marked with 1 will give the row which will be placed in the target row
   
-  foreach(1:(g/2)) %do% {
-    #random number from 1 to gene size.
-    #sampled with weighting applied
-    sample(n=g, size=2, prob  = weights)
+  parents <- crossmat[,1:2] |> t() |> matrix(ncol=1)
+  # transpose to ensure the correct order is used to fill the matrix 
+  # (byrow has no effect, it always goes down the column first)
+  # now we will have a single column with integers in them.
+  # each row is in the correct place, it is just to use the integer
+  # to tell us where to place the 1 (all else being 0)
+  # if can do this, then we will have the parents in the right place
+  # now just to crossover...ahhhh
+  
+  xindex <- crossmat[,3] #cross-over point index
+  
+  base <- matrix(0L,ncol=g,nrow=g)
+  for (i in 1:g)
+  {
+    base[i,parents[i]] <- 1L
   }
+  selected_genomes <- base %*% Theta
+  
+  transformed_genomes <- selected_genomes
+  for(i in 2*(1:n))
+  {
+    transformed_genomes[(i-1):i,xindex[i]:p] <- selected_genomes[i:(i-1),xindex[i]:p]
+    # in theory, this works well
+    # the subset-to-be-flipped is replaced with the (row-flipped) subset 
+    # from the original
+  }
+}
+
+# columns 1:2 represent the parents
+# column 3 is the crossover point
+# g: num of genomes (parents)
+# p: num of genes / parameters within each genome
+create_crossover_matrix <- function(g,n,p,scores){
+  
+  cbind(
+    t(replicate(n, sample(g, size=2, prob=scores))), #selects 2 parents
+    sample(p, n, replace=T) #selects crossover point
+    ) |> return()
+  
+  #note: will randomly crossover an amount of 'genes' from 1:num(genes)
+  #thus the crossover cannot be 'no crossover', but it can be 'ALL crossover', 
+  #resulting in offspring identical to the parents in only one case.
+}
+
+# to evaluate the scores applied to each parent based on some (arbitrary)
+# performance metric
+score_genomes <- function(Theta) {
+  scores <- future_pmap(Theta,.f=objective,.progress=T)
+  return(scores)
+}
+```
+
+```{r}
+#| label: "Optimisation Function Definition"
+
+# wrapper function to select optimisation function
+optimisation <- function(){
   
 }
 
-crossover_mutate <- function(theta1,theta2){
-  len <- length(theta1)
-  stopifnot(len == length(theta2)) # assert or error
+```
 
-  #index <- 1:sample(len, 1)
-  #indices <- 1:index
+```{r}
+#| label: "Test Function Definitions"
+
+# to be used as potential objective functions
+
+# constrained to 2-dimensional test functions (for now)
+sphere <- function(){
   
-  indices <- 1:sample(len, 1)
-  #note: will flip an amount of 'genes' from 1 to the amount of 'genes'. 
-  #So it is not possible to get the same genes out as you put in.
-  #the randomness that dictates whether or not a mutation happens will solely
-  #be managed by whatever calls the mutate function.
-  
-  new_gene1 <- c(theta1[indices],theta2[-indices])
-  new_gene2 <- c(theta2[indices],theta1[-indices])
-  
-  list(new_gene1, new_gene2) |> return()
 }
 
 ```
@@ -68,8 +167,90 @@ crossover_mutate <- function(theta1,theta2){
 ```{r}
 #| label: "Objective Function Definition"
 
-obj_placeholder_name <- function(){
+objective <- function(theta){
   
 }
 
-```  
+```
+
+# Neural Network
+
+Later potential additions: ability to set layer amount & size through a list of integers
+
+```{r}
+#| label: nn-structure
+#| echo: true
+# ------------------------------- model data ------------------------------
+m <- c(4,4) #hidden layer size
+M <- length(m) #num hidden layers
+p <-  #predictors
+q <-  #responses
+N <- dat |> nrow()
+X <- dat[,  1:p] |> as.matrix(ncol=p, nrow=N)
+Y <- dat[,p+1:q] |> as.matrix(ncol=q, nrow=N)
+npars <- p*m[1] +m[1]*m[2] +m[2]*q +m[1]+m[2]+q
+# --- activation functions ------------------------------------------------
+sig1 <- function(z) tanh(z)     # first m hidden layer
+sig2 <- function(z) tanh(z)     # second m hidden layer
+sig3 <- function(z) softmax(z)  # output layer
+# --- neural network ------------------------------------------------------
+neural_net <- function(X, Y, theta, m, nu) {
+  N <- X |> nrow()
+  p <- X |> ncol()
+  q <- Y |> ncol()
+  # allocating theta to weights and biases
+  index <- 1:(p*m[1])
+  W1 <- matrix(theta[index],p,m[1])     # p*m1
+  index <- max(index)+ 1:(m[1]*m[2])
+  W2 <- matrix(theta[index],m[1],m[2])  # m1*m2
+  index <- max(index)+ 1:(m[2]*q)
+  W3 <- matrix(theta[index],m,q)        # m2*q
+  index <- max(index)+ 1:m[1]
+  b1 <- matrix(theta[index],m[2],1)     # m1*1
+  index <- max(index)+ 1:m[2]
+  b2 <- matrix(theta[index],m[2],1)     # m2*1
+  index <- max(index)+ 1:q
+  b3 <- matrix(theta[index],q,1)        # q*1
+  
+  # Forward Evaluation of network
+  ones <- matrix(1,1,N) # vector of 1s transposed 1*N
+  #  inputs  
+  A0   <- t(X)                          # p*N
+  A1   <- sig1(t(W1)%*%A0+b1%*%ones)    # m1*N
+  A2   <- sig2(t(W2)%*%A1+b2%*%ones)    # m2*N
+  A3   <- sig3(t(W3)%*%A2+b3%*%ones)    # q*N
+  Yhat <- t(A3)                         # N*q
+  E1 <- g(Yhat,Y)
+  E2 <- E1 +nu*(sum(W1^2,W2^2,W3^2)) #SSE_penalised
+  return(list(Yhat = Yhat, E1 = E1, E2 = E2)) #could return mse, 
+} #but does not matter when not comparing between different Ns
+```
+
+# Validation Analysis
+
+```{r}
+#| label: val-analysis
+#| echo: true
+
+n_val <- 10
+nu_seq <- exp(seq(-20,10,length= n_val))
+#should give us a progress bar, while computing the validation error for 
+#this neural net, for the given nu values. also in parallel
+with_progress({
+  p <- progressor(along=nu_seq)
+  Val_error <- foreach(nu. = nu_seq,
+                       .combine = rbind) %dofuture% {
+    obj_pen <- function(pars) {af_net(train_X,train_Y,pars,m,nu.)$E2}
+    #Validation analysis, per nu
+    res_opt = #optimisation function goes here
+    res_val = af_net(valid_X,valid_Y,res_opt$estimate,m,0) 
+    
+    #progress bar iterator: also supplies message
+    p(message=sprintf("calculated nu: %g",signif(nu.,4)),amount=1)
+    #return, will be combined via rbind
+    data.frame(nu=nu., error=res_val$E1, iter=res_opt$iterations, 
+               code=res_opt$code)} #tells us state of convergence
+},handlers= handler_pbcol( #type of progress bar
+    complete   = function(s) cli::bg_cyan(cli::col_white(s)),
+    incomplete = function(s) cli::bg_red( cli::col_white(s))))
+```
