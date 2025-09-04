@@ -214,6 +214,9 @@ obst_bounds[1:2,1:2] <- matrix(c(  -1, 1,
 # anything not present in the theta parameters is 'unknown' to the model or 
 # "assumed" by the model (i.e., universal properties -> dimensionality = 2) 
 
+# above does not seem to be true. that is based on a misunderstanding of theta.
+# the params do not include object locations.
+
 # theta structure:
 # num obstacles / trees
 # obstacle size (future: sizes?)
@@ -284,7 +287,7 @@ generate_obstacles <- function(obst, fillcolour='forestgreen'){
   # The size of the trees are exactly what is shown.
 }
 
-detect_collision <- function(x){
+detect_collision <- function(x,obst){
   if(abs(x[1]) >= bounds[2,1] || x[2] <= bounds[1,2]) #boundary detection
   {
     return(1)
@@ -312,8 +315,8 @@ detect_collision <- function(x){
   return(0) # no collisions!
 }
 
-eval_game_state <- function(x){
-  if (iterlim > 100 || detect_collision(x,obst))
+eval_game_state <- function(x,obst){
+  if (iterlim > 100 || detect_collision(x, obst))
     return(-1)  
   
   if (x[2] >= bounds[2,2])
@@ -340,51 +343,49 @@ Later potential additions: ability to set layer amount & size through a list of 
 #| echo: true
 # ------------------------------- model data ------------------------------
 m <- c(5,5) #hidden layer size
-M <- length(m) #num hidden layers
-p <- 2  #predictors
-q <- 2  #responses
-N <- dat |> nrow()
-X <- dat[,  1:p] |> as.matrix(ncol=p, nrow=N)
-Y <- dat[,p+1:q] |> as.matrix(ncol=q, nrow=N)
+p <- 2  #predictors (x)
+q <- 2  #responses  (c)
 npars <- p*m[1] +m[1]*m[2] +m[2]*q +m[1]+m[2]+q # =57
-# --- activation functions ------------------------------------------------
-sig1 <- function(z) tanh(z)     # first m hidden layer
-sig2 <- function(z) tanh(z)     # second m hidden layer
-sig3 <- function(z) softmax(z)  # output layer
-# --- neural network ------------------------------------------------------
-neural_net <- function(X, Y, theta, m, nu) {
-  N <- X |> nrow()
-  p <- X |> ncol()
-  q <- Y |> ncol()
+
+nn_setup <- function(theta){
+  # --- activation functions ------------------------------------------------
+  sig1 <<- function(z) tanh(z)    # first m hidden layer
+  sig2 <<- function(z) tanh(z)    # second m hidden layer
+  sig3 <<- function(z) tanh(z)    # output layer (output constrained from -1 to 1)
+    
   # allocating theta to weights and biases
+  # GLOBALLY, so nn_step works
   index <- 1:(p*m[1])
-  W1 <- matrix(theta[index],p,m[1])     # p*m1
+  W1 <<- matrix(theta[index],p,m[1])    # p*m1
   index <- max(index)+ 1:(m[1]*m[2])
-  W2 <- matrix(theta[index],m[1],m[2])  # m1*m2
+  W2 <<- matrix(theta[index],m[1],m[2]) # m1*m2
   index <- max(index)+ 1:(m[2]*q)
-  W3 <- matrix(theta[index],m,q)        # m2*q
+  W3 <<- matrix(theta[index],m,q)       # m2*q
   index <- max(index)+ 1:m[1]
-  b1 <- matrix(theta[index],m[2],1)     # m1*1
+  b1 <<- matrix(theta[index],m[2],1)    # m1*1
   index <- max(index)+ 1:m[2]
-  b2 <- matrix(theta[index],m[2],1)     # m2*1
+  b2 <<- matrix(theta[index],m[2],1)    # m2*1
   index <- max(index)+ 1:q
-  b3 <- matrix(theta[index],q,1)        # q*1
-  
-  # Forward Evaluation of network
-  ones <- matrix(1,1,N) # vector of 1s transposed 1*N
-  #  inputs  
-  A0   <- t(X)                          # p*N
-  A1   <- sig1(t(W1)%*%A0+b1%*%ones)    # m1*N
-  A2   <- sig2(t(W2)%*%A1+b2%*%ones)    # m2*N
-  A3   <- sig3(t(W3)%*%A2+b3%*%ones)    # q*N
-  Yhat <- t(A3)                         # N*q
-  E1 <- g(Yhat,Y)
-  E2 <- E1 +nu*(sum(W1^2,W2^2,W3^2)) #SSE_penalised
-  return(list(Yhat = Yhat, E1 = E1, E2 = E2)) #could return mse, 
-} #but does not matter when not comparing between different Ns
+  b3 <<- matrix(theta[index],q,1)       # q*1
+}
+
+# Forward Evaluation of network
+
+#  inputs  
+nn_step <- function(x){
+  A0   <- t(x)                  # p*1
+  A1   <- sig1(t(W1)%*%A0+b1)   # m1*1
+  A2   <- sig2(t(W2)%*%A1+b2)   # m2*1
+  A3   <- sig3(t(W3)%*%A2+b3)   # q*1
+  c    <- t(A3)                 # 1*q
+}
+
 ```
+
+
 ```{r}
 #|label: game
+#|plot:
 
 set.seed(0)
 
@@ -399,9 +400,9 @@ base_field <- generate_field(colours)
 
 # base_field
 
-obst <- cbind(X_1 = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
-              X_2 = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
-              Size= rep(obst_size, n_obst))
+obst <- cbind(X_1  = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
+              X_2  = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
+              Size = rep(obst_size, n_obst))
 
 field_obst <- generate_obstacles(obst, colours[4])
 field <- base_field+field_obst
@@ -409,39 +410,56 @@ field <- base_field+field_obst
 # field + drone
 
 runs <- 10
-state <- matrix(NA,nrow=iterlim,ncol=runs)
+
+state <- matrix(NA,nrow=iterlim,ncol=runs) # storage for states
+
+temp <- matrix(NA,nrow=iterlim+1,ncol=2) 
+colnames(temp)<-c("X_1","X_2")
+position <- rep(list(temp),runs) #x & y position storage for all runs
 
 #initial theta
-theta <- 
+theta <- runif(npars,-1,1)
 
+#initial model
+nn_setup(theta)
+quartz()
 for(r in 1:runs){
   k <- 0
-  x <- c(runif(n=1,start_bounds[,1]),
-         start_bounds[1,2])
-  field
+  x <- matrix(c(runif(n=1,start_bounds[,1]),start_bounds[1,2]),
+              ncol=2,dimnames=list(NULL, #row
+                                   c("X_1","X_2"))) #col
+  this_field <- field
   while(state[k,r]==0||k==0){ #only the first condition will be checked for the 
     # most part (exceptional condition (thus do-while); shouldn't add overhead)
+    
+    position[[r]][k+1,] <- x # store x in row k+1, for run r
+    this_field <- this_field + geom_point(data=x,mapping=aes(x=X_1,y=X_2))
+    plot(this_field) #SHOW HIM!
+    Sys.sleep(0.1)
+    
     k <- k+1
     
-    c <- MODEL(x, theta)
+    c <- nn_step(x)
     new_x <- x + c*delta
     
-    sk <- eval_game_state(new_x)
+    sk <- eval_game_state(new_x,obst)
     state[k,r] <- sk
     
     if (sk == -1){
+      position[[r]][k+1,] <- x # someone needs to store the final position,...
       on_game_loss()
     }
     if (sk == 1){
+      position[[r]][k+1,] <- x # ...it sure won't be the next loop
       on_game_win()
     }
     if (sk == 0){
-      new_x <- x + c*delta
-  
-      state <- eval_game_state(new_x)
+      #all is well! GO ON YA DWEEB, NEXT LOO
+      x <- new_x
     }
   }
 }
+
 
 ```
 
