@@ -29,7 +29,7 @@ on.exit(plan(sequential)) # to ensure that the workers are correctly shut down
 ```{r}
 #| label: datavis-setup
 
-base_theme <- theme_minimal() + 
+base_theme <- theme_minimal() +
   theme(aspect.ratio=1,legend.position = 'bottom')
 theme_set(base_theme) # setting the default theme for ggplot 
 ```
@@ -266,7 +266,6 @@ generate_field <- function(colours){
       scale_y_continuous(sec.axis = sec_axis(transform = ~.* 1, 
                                              name = "East")) +
       labs(x= "South", y="West")
-      
   )
 }
 
@@ -385,9 +384,7 @@ nn_step <- function(x){
 
 ```{r}
 #|label: game
-#|plot:
-
-set.seed(0)
+#|warn: false
 
 # colours <- viridisLite::viridis(n=3,alpha=0.7,begin=0.2,end=0.8,option="B")
 
@@ -398,97 +395,103 @@ colours <- c("bound" = 'firebrick',
 
 base_field <- generate_field(colours)
 
-# base_field
-
+set.seed(2)
 obst <- cbind(X_1  = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
               X_2  = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
               Size = rep(obst_size, n_obst))
 
-field_obst <- generate_obstacles(obst, colours[4])
-field <- base_field+field_obst
-# field
-# field + drone
+blank_points<-rbind(
+  c(-1.1,-1.1),
+  c(1.1,1.1)) |> as.data.frame()
+
+field_obst <- generate_obstacles(obst, colours[4]) 
+field <- base_field+field_obst +geom_point(
+  data=blank_points,
+  aes(x=V1,y=V2),                    
+  alpha=0,size=0.01)
 
 runs <- 10
 
-state <- matrix(NA,nrow=iterlim,ncol=runs) # storage for states
-
-temp <- matrix(NA,nrow=iterlim+1,ncol=2) 
-colnames(temp)<-c("X_1","X_2")
-position <- rep(list(temp),runs) #x & y position storage for all runs
-
-#initial theta
-theta <- runif(npars,-1,1)
-
-#initial model
-nn_setup(theta)
-quartz()
-for(r in 1:runs){
-  k <- 0
-  x <- matrix(c(runif(n=1,start_bounds[,1]),start_bounds[1,2]),
-              ncol=2,dimnames=list(NULL, #row
-                                   c("X_1","X_2"))) #col
-  this_field <- field
-  while(state[k,r]==0||k==0){ #only the first condition will be checked for the 
-    # most part (exceptional condition (thus do-while); shouldn't add overhead)
-    
-    position[[r]][k+1,] <- x # store x in row k+1, for run r
-    this_field <- this_field + geom_point(data=x,mapping=aes(x=X_1,y=X_2))
-    plot(this_field) #SHOW HIM!
-    Sys.sleep(0.1)
-    
-    k <- k+1
-    
-    c <- nn_step(x)
-    new_x <- x + c*delta
-    
-    sk <- eval_game_state(new_x,obst)
-    state[k,r] <- sk
-    
-    if (sk == -1){
-      position[[r]][k+1,] <- x # someone needs to store the final position,...
-      on_game_loss()
-    }
-    if (sk == 1){
-      position[[r]][k+1,] <- x # ...it sure won't be the next loop
-      on_game_win()
-    }
-    if (sk == 0){
-      #all is well! GO ON YA DWEEB, NEXT LOO
-      x <- new_x
+run_game <- function(){
+  state <<- matrix(NA,nrow=iterlim,ncol=runs) # storage for states
+  
+  temp <- matrix(NA,nrow=iterlim+1,ncol=2) 
+  colnames(temp)<-c("X_1","X_2")
+  position <<- rep(list(temp),runs) #x & y position storage for all runs
+  
+  #initial theta
+  theta <- runif(npars,-1,1)
+  
+  #initial model
+  nn_setup(theta)
+  #dev.new(noRStudioGD = TRUE)
+  for(r in 1:runs){
+    k <- 0
+    x <- matrix(c(
+      runif(n=1,min=start_bounds[1,1],max=start_bounds[2,1]),
+      start_bounds[1,2]),
+      ncol=2,
+                dimnames=list(NULL, #row
+                              c("X_1","X_2"))) #col
+    while(state[k,r]==0||k==0){ #only the first condition will be checked for the 
+      # most part (exceptional condition (thus do-while); shouldn't add overhead)
+      
+      position[[r]][k+1,] <<- x # store x in row k+1, for run r
+      
+      # print(field+geom_point(
+      #   data=position[[r]],
+      #   mapping=aes(x=X_1,y=X_2)))
+      
+      k <- k+1
+      
+      c <- nn_step(x)
+      new_x <- x + c*delta
+      
+      sk <- eval_game_state(new_x,obst)
+      state[k,r] <<- sk
+      
+      if (sk == -1){
+        position[[r]][k+1,] <<- new_x # someone needs to store the final position,...
+        on_game_loss()
+      }
+      if (sk == 1){
+        position[[r]][k+1,] <<- new_x # ...it sure won't be the next loop
+        on_game_win()
+      }
+      if (sk == 0){
+        #all is well! GO ON YA DWEEB, NEXT LOOP
+        x <- new_x
+      }
     }
   }
+  run_scores <<- colSums(state,na.rm=TRUE)
+  score <<- sum(run_scores,na.rm=TRUE)
+}
+```
+
+```{r}
+#|warnings: false
+#|label: run-game
+
+for(seed in 1:10){
+  set.seed(seed)
+  run_game()
+  #dev.new(noRStudioGD = TRUE)
+  this_field <- field
+  for(i in 1:10){
+    this_field <- this_field + geom_point(
+        data=position[[i]],
+        mapping=aes(x=X_1,y=X_2),
+        colour=i,
+        size=0.5,
+        alpha=0.5) +
+      labs(title=sprintf("Seed = %d",seed))
+  }
+  plot(this_field)
 }
 
 
 ```
 
-# Validation Analysis
 
-```{r}
-#| label: val-analysis
-#| echo: true
-
-n_val <- 10
-nu_seq <- exp(seq(-20,10,length= n_val))
-#should give us a progress bar, while computing the validation error for 
-#this neural net, for the given nu values. also in parallel
-with_progress({
-  p <- progressor(along=nu_seq)
-  Val_error <- foreach(nu. = nu_seq,
-                       .combine = rbind) %dofuture% {
-    obj_pen <- function(pars) {af_net(train_X,train_Y,pars,m,nu.)$E2}
-    #Validation analysis, per nu
-    res_opt = #optimisation function goes here
-    res_val = af_net(valid_X,valid_Y,res_opt$estimate,m,0) 
-    
-    #progress bar iterator: also supplies message
-    p(message=sprintf("calculated nu: %g",signif(nu.,4)),amount=1)
-    #return, will be combined via rbind
-    data.frame(nu=nu., error=res_val$E1, iter=res_opt$iterations, 
-               code=res_opt$code)} #tells us state of convergence
-},handlers= handler_pbcol( #type of progress bar
-    complete   = function(s) cli::bg_cyan(cli::col_white(s)),
-    incomplete = function(s) cli::bg_red( cli::col_white(s))))
-```
 
