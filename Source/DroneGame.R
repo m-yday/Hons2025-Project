@@ -1,70 +1,5 @@
----
-title: "Optimisation Functions"
-format: html
----
-
-# Setup
-
-```{r}
-#| label: load-libraries
-library(tidyverse,attach.required = TRUE)
-library(future)
-library(doFuture)
-library(progressr)
-library(parallelly)
-```
-
-```{r}
-#| label: parallel-computing-setup
-
-options(parallelly.availableCores.omit = 1)
-if(supportsMulticore()) # multicore = mac, linux, etc. (outside of RStudio)
-  plan(multicore) else plan(multisession) #multisession = windows and other
-on.exit(plan(sequential)) # to ensure that the workers are correctly shut down
-```
-
-```{r}
-#| label: datavis-setup
-
-base_theme <- theme_minimal() +
-  theme(aspect.ratio=1,legend.position = 'bottom')
-theme_set(base_theme) # setting the default theme for ggplot 
-```
-
-# Optimisation Functions
-
-```{r}
-#| label: test-function-definitions
-
-# to be used as potential objective functions
-
-# constrained to 2-dimensional test functions (for now) 
-# (some are already generalised to any D)
-
-#separable
-#min: all x_i = 0
-sphere <- function(x){
-  t(x)%*%x
-}
-#min: c
-sphere_offset <- function(x,c){
-  sphere(x-c)
-}
-```
-
-```{r}
-#| label: objective-function-definition
-
-objective <- function(){ # param = ?
-
-}
-```
-
-```{r}
-#| label: drone-game-objective
-# one of our arbitrary objectives!
-
 # game params
+
 n_obst    <- 40 #J
 obst_size <- 0.02 #r (radius) 2*r = square side length
 
@@ -79,11 +14,25 @@ rownames(bounds) <- c('min','max')
 
 start_bounds <- bounds #copy, so there's no need to rename again lol
 start_bounds[1:2,1:2] <- matrix(c(-0.8,0.8,
-                                    -1, -1
-                                  ), ncol=2)
+                                  -1, -1
+), ncol=2)
 obst_bounds <- bounds
 obst_bounds[1:2,1:2] <- matrix(c(  -1, 1,
-                                 -0.5, 1), ncol=2)
+                                   -0.5, 1), ncol=2)
+
+
+# theta needs to be defined such that all the game parameters are present, such that the model can 'see' the details of the game
+# anything not present in the theta parameters is 'unknown' to the model or 
+# "assumed" by the model (i.e., universal properties -> dimensionality = 2) 
+
+# above does not seem to be true. that is based on a misunderstanding of theta.
+# the params do not include object locations.
+
+# theta structure:
+# num obstacles / trees
+# obstacle size (future: sizes?)
+# obstacle locations (x-y pairs)
+#
 
 #boundary points
 corner_bl  <- bounds[1,] #minimums (bottom left)
@@ -111,7 +60,7 @@ lines <- lines |> add_column(
              "bound",
              "bound",
              "finish")
-  )
+)
 
 generate_field <- function(colours){
   return(
@@ -139,8 +88,8 @@ generate_obstacles <- function(obst, fillcolour='forestgreen'){
                   height=2*Size,
                   width =2*Size
                   #fill  = fillcolour
-                  )
               )
+    )
   )
   # chose to plot trees as squares instead of circles for plotting accuracy -
   # i.e., the plot matches exactly the reality of the game (except that the 
@@ -177,7 +126,7 @@ detect_collision <- function(x,obst){
 }
 
 eval_game_state <- function(x,obst,step){
-  if (step >= iterlim || detect_collision(x, obst))
+  if (step > iterlim || detect_collision(x, obst))
     return(-1)  
   
   if (x[2] >= bounds[2,2])
@@ -185,71 +134,14 @@ eval_game_state <- function(x,obst,step){
   
   return(0)
 }
-```
 
-# Neural Network
-
-Later potential additions: ability to set layer amount & size through a list of integers
-
-```{r}
-#| label: nn-structure
-# ------------------------------- model data ------------------------------
-m <- c(5,5) #hidden layer size
-p <- 2  #predictors (x)
-q <- 2  #responses  (c)
-npars <- p*m[1] +m[1]*m[2] +m[2]*q +m[1]+m[2]+q # =57
-
-create_IterativeNN <- function(theta){
-  stopifnot(is.numeric(theta))
-  
-  # --- activation functions ------------------------------------------------
-  sig1 <- function(z) tanh(z) # first m hidden layer
-  sig2 <- function(z) tanh(z) # second m hidden layer
-  sig3 <- function(z) tanh(z) # output layer (output constrained from -1 to 1)
-  
-  # allocating theta to weights and biases
-  index <- 1:(p*m[1])
-  W1 <- matrix(theta[index],p,m[1])    # p*m1
-  index <- max(index)+ 1:(m[1]*m[2])
-  W2 <- matrix(theta[index],m[1],m[2]) # m1*m2
-  index <- max(index)+ 1:(m[2]*q)
-  W3 <- matrix(theta[index],m,q)       # m2*q
-  index <- max(index)+ 1:m[1]
-  b1 <- matrix(theta[index],m[2],1)    # m1*1
-  index <- max(index)+ 1:m[2]
-  b2 <- matrix(theta[index],m[2],1)    # m2*1
-  index <- max(index)+ 1:q
-  b3 <- matrix(theta[index],q,1)       # q*1
-  
-  W <- list(W1,W2,W3)
-  b <- list(b1,b2,b3)
-  sig <- list(sig1,sig2,sig3)
-  
-  #storing object
-  model_object <- structure(list(W=W,b=b,sig=sig),
-                            class="IterativeNN",
-                            hidden=2) 
-  
-  #creating 'step' function 
-  model_func <- function(x){
-    A0   <- t(x)                  # p*1
-    A1   <- sig[[1]](t(W[[1]])%*%A0+b[[1]])   # m1*1
-    A2   <- sig[[2]](t(W[[2]])%*%A1+b[[2]])   # m2*1
-    A3   <- sig[[3]](t(W[[3]])%*%A2+b[[3]])   # q*1
-    c    <- t(A3)                 # 1*q
-  }
-  
-  return(list(func=model_func, comps=model_object))
-}
-```
-
-```{r}
-#|label: game
-set.seed(2)
+#--------------------------------RUN GAME--------------------------------------#
 
 runs <- 10
+
 run_colours <- viridisLite::viridis(n=runs,alpha=0.7,begin=0.2,end=0.8,option="B")
-names(run_colours)<-c(2:runs+1)
+names(run_colours)<-c(1:runs+1)
+
 colours <- c("bound" = 'firebrick',
              "finish"= 'limegreen',
              "start" = 'yellow3',
@@ -259,8 +151,10 @@ colours <- c("bound" = 'firebrick',
              "-1"    = 'red',
              "-2"    = 'yellow4',
              run_colours)
+
 base_field <- generate_field(colours)
 
+set.seed(2)
 obst <- cbind(X_1  = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
               X_2  = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
               Size = rep(obst_size, n_obst))
@@ -276,42 +170,56 @@ field <- base_field+field_obst +geom_point(
   alpha=0,size=0.01)
 
 run_game <- function(iterative_func){
-  position <- array(NA, 
+  
+  position <- array(NA, #position matrix extended for multiple runs
                     dim = c(iterlim,3,runs),
                     dimnames = list(step=paste0("k=",1:iterlim),
                                     position=c("X_1","X_2","State"),
                                     run=paste0("r=",1:runs)))
+  
+  #x & y position & state storage for all runs
   #dev.new(noRStudioGD = TRUE)
+  
   for(r in 1:runs){
     k <- 1
-    
-    # created as a matrix for detect_collision (through eval_game_state)
     x <- matrix(c(
       runif(n=1,min=start_bounds[1,1],max=start_bounds[2,1]),
       start_bounds[1,2]),
       ncol=2,
-                dimnames=list(NULL,             #row
-                              c("X_1","X_2")))  #col
-    
+      dimnames=list(NULL, #row
+                    c("X_1","X_2"))) #col
     sk <- -2 #denotes start point 
-  
+    
+    #while(position[k,3,r]==0||k==1){ #only the 1st condition will be checked
+    # for the most part (exceptional condition (thus do-while); shouldn't  
+    # add overhead)
     while(sk==0||sk==-2){
-      position[k,,r] <- c(x,sk)
+      
+      position[k,,r] <- c(x,sk) # store x in row k+1, for run r
+      
+      # print(field+geom_point(
+      #   data=position[[r]],
+      #   mapping=aes(x=X_1,y=X_2)))
+      
       k <- k+1
       
-      # movement decision! 
       c <- iterative_func(x)
-
-      # update position
       new_x <- x + c*delta
       
       sk <- eval_game_state(x=new_x,obst=obst,step=k)
       
-      if (sk ==-1){ position[k,,r] <- c(new_x,sk) }
-      # someone needs to store the final position,...
-      if (sk == 1){ position[k,,r] <- c(new_x,sk) }
-      # ...it sure won't be the next loop
-      if (sk == 0){ x <- new_x } 
+      if (sk == -1){
+        position[k,,r] <- 
+          c(new_x,sk) # someone needs to store the final position,...
+      }
+      if (sk == 1){
+        position[k,,r] <- 
+          c(new_x,sk) # ...it sure won't be the next loop
+      }
+      if (sk == 0){
+        #all is well! GO ON YA DWEEB, NEXT LOOP
+        x <- new_x
+      }
     }
   }
   
@@ -327,13 +235,7 @@ run_game <- function(iterative_func){
   
   return(list(data=data, scores=run_scores, raw=position))
 }
-```
 
-```{r}
-#|warnings: false
-#|label: run-game
-
-set.seed(2000)
 
 #initial theta
 theta <- runif(npars,-1,1)
@@ -341,7 +243,9 @@ theta <- runif(npars,-1,1)
 #initial model
 model <- create_IterativeNN(theta)
 
-for(i in 1:10){
+
+for(seed in 1:10){
+  set.seed(seed)
   game_out <- run_game(model$func)
   #dev.new(noRStudioGD = TRUE)
   this_field <- field
@@ -354,8 +258,7 @@ for(i in 1:10){
     stroke=0.5,
     show.legend = FALSE
   ) +
-    labs(title=sprintf("Batch %d.",i))
+    labs(title=sprintf("Seed = %d",seed))
   
   plot(this_field)
 }
-```
