@@ -45,12 +45,10 @@ ggdata <- expand_grid(!!! rep(list(xseq),DIM),
 pobj <- ggplot()+
   geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
   scale_fill_viridis_c(option="E")
-
 pobj
 
 
 #next we follow the path of the optimisation function
-
 set.seed(1)
 start <- runif(n=DIM,startbounds[1],startbounds[2])
 names(start)=names(ggdata)[1:DIM]
@@ -72,20 +70,21 @@ step_gradient_descent <- function(x,nu=nu_global){
 }
 
 step_random_search <- function(x,nu=nu_global,bounds=minmax){
-  next_x <- runif(n=DIM,bounds[1],bounds[2])
+  next_x <- rnu*runif(n=DIM,bounds[1],bounds[2]) 
   return(next_x)
 }
 
 step_newton_raphson <- function(x,nu=nu_global){
-
   next_x <- x - nu*(solve(hessian(obj,x))) %*% (grad(obj,x))
   return(next_x)
 }
 
 step_genetic_algorithm <- function(){
+  #real valued genetic algorithm
   
 }
 
+# defines which updating equation is used
 update_opt <- function(x, nu=nu_global){
   step_random_search(x,nu)
 }
@@ -98,8 +97,8 @@ opt_trace[1,] <- c(1,xi,min_x)
 
 for(i in 2:iterlim){
   
-  xi <- update_opt(xi)
-  yi <- obj(xi)
+  xi <- update_opt(xi) 
+  yi <- obj(xi) #objective being minimised
   
   if(yi<min_y){
     min_y <- yi

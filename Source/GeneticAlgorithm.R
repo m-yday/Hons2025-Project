@@ -81,3 +81,5 @@ score_genomes <- function(Theta) {
   scores <- future_pmap(Theta,.f=objective,.progress=TRUE)
   return(scores)
 }
+
+

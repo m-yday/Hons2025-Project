@@ -1,0 +1,331 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  a4paperpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{2}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\newcommand{\B}[1]{\boldsymbol{#1}}
+\newcommand{\+}{\phantom{-}}
+\newcommand{\op}[1]{\operatorname{#1}}
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Analysis of Evolutionary Algorithms for Optimisation},
+  pdfauthor={Shvet Maharaj},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Analysis of Evolutionary Algorithms for Optimisation}
+\author{Shvet Maharaj}
+\date{12 January 2026}
+\begin{document}
+\maketitle
+
+\renewcommand*\contentsname{Table of contents}
+{
+\hypersetup{linkcolor=}
+\setcounter{tocdepth}{4}
+\tableofcontents
+}
+
+\section{Design}\label{design}
+
+\subsection{Update procedures}\label{update-procedures}
+
+Where noted, a \emph{strictly improving update procedure} will be used
+alongside the updating equations, defined as:
+\[\B x_{k+1} = \begin{cases}\B v_{k+1}&\text{if} \quad \op f(\B v_{k+1})< \op f(\B x_k),\\\B x_k & \text{otherwise.}\end{cases}\]
+Where \(\B x_k\) is the best performing point at iteration \(k\), and
+\(\B v_{k+1}\) is the candidate point for the next iteration, \(k+1\).
+This candidate point is what is generated by the updating equations.
+
+Alternatively, the update procedure could be a simple iterative updating
+procedure, where each updated point, \(\B v_{k+1}\), is used directly by
+the algorithm in the next iteration (thus, the algorithm updates on
+\(\B v_k\), instead of \(\B x_k\)). This would correspond more so to the
+deterministic algorithms. The best solution, \(\B x_k\) is simply stored
+as the algorithm progresses.
+
+\subsection{Updating equations}\label{updating-equations}
+
+At the core of this exploration of the genetic algorithm, and other
+methods for optimisation, are the \emph{updating equations}. These
+define how exactly the optimisation paradigm attempts to iteratively
+improve a candidate solution, \(\B v\).
+
+\subsubsection{Hessian methods}\label{hessian-methods}
+
+\paragraph{Newton-Raphson}\label{newton-raphson}
+
+\[\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}\]
+
+\subsubsection{Gradient methods}\label{gradient-methods}
+
+\paragraph{Gradient descent}\label{gradient-descent}
+
+\[\B v_{k+1} = \B v_k -\nu \nabla f\left( \B v_k \right),\] where
+\(\nu\) is the learning rate.
+
+\subsubsection{Function value methods}\label{function-value-methods}
+
+Also known as Direct Search, Pattern Search, or Black-Box Methods. These
+algorithms do not make use of gradient nor of hessian information. This
+makes them far easier to apply to any context.
+
+\paragraph{Random search (RS)}\label{random-search-rs}
+
+The specific version of the random search algorithm is informed by the
+descriptions given by (\textbf{zabinsky2009?}). Algorithms are described
+by being `global' or `local'.
+
+\textbf{Pure Random Search (PRS)} repeatedly performs a global search
+with a simply improving update procedure.
+
+The updating equation is defined as, \[\B v_{k+1} = \B u.\]
+
+It is notable that neither of the terms \(\B x_k\) nor \(\B v_k\) ---
+the best or candidate points found by or for iteration \(k\) --- are
+present in this formula.
+
+Each generated point is \emph{independent} of any previous point. The
+major benefit of this is PRS is `embarrassingly parallelisable'. This is
+the only optimisation algorithm that will have this property in this
+paper.
+
+We test also an additional variant of RS, where the global search is
+either performed solely for the starting point), \(\B x_0\), or skipped
+entirely in favour of a user-defined starting point. Subsequent points
+are generated locally from the hypersphere (the `(\(N-1\))-sphere', or
+the `surface of the \(N\)-ball') around \(\B x_k\).
+
+This is Rastrigin's \textbf{Fixed Step Size Random Search
+(FSSRS)}(\textbf{rastrigin1963?}).
+
+An efficient way to sample uniformly from the surface of an \(N\)-ball
+is given by Marsaglia(\textbf{marsaglia1972?}).
+
+\[\B v_{k+1} = \B x_k +h \B u,\]
+
+Here, \(\B u\) is a normalised \(N\)-dimensional vector sample from the
+standard normal distribution such that,
+
+\(\B u = \frac1{\lVert \B z \rVert}\B z\) and
+\(\B z \sim \mathcal{N}_N\left(0,1\right),\) and where \(h\) is a step
+size hyperparameter.
+
+\paragraph{Genetic algorithms}\label{genetic-algorithms}
+
+Genetic algorithms are a subset of evolutionary algorithms, typified by
+the use of all of three genetic operators: crossover, selection, and
+mutation. A \emph{real-coded} (in reference to \(\mathbb R\), the real
+number set) genetic algorithm is used for greater applicability to
+arbitrary problems and models, despite genetic processes occurring with
+a discrete set of genes (ACGT) in nature.
+
+Notation does shift here, due to the genetic algorithm necessarily
+requiring multiple candidates for each iteration. Our previous notation
+referencing a single candidate per iteration is thus no longer feasible.
+
+We are implementing genetic algorithms using the \texttt{GA} package, as
+described by Scrucca(\textbf{scrucca2013?}).
+
+A brief explanation of the algorithm follows:
+
+\[\B \Theta^{\left(k+1\right)} = \Theta^{\left(k\right)}\] \#\#\#\#\#
+Fitness evaluation Fitness for each of the `genotypes' (candidate
+solutions), \(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is
+an arbitrary index of the genotype in the generation \(k\). This is
+typically the objective function of interest,
+\(\op f\left(\cdot\right)\).
+
+\subparagraph{Selection}\label{selection}
+
+A subset of genotypes from the current generation's population becomes
+selected as a separate population known as the `reproducing population'
+Genotypes are selected (with replacement) through a weighted selection
+process, based typically proportionally on the fitness of each genotype,
+\(\op f\left(\theta_i^{\left(k\right)}\right)\), with probability
+\(p_i^{\left(k\right)}\).
+
+An elitist strategy can be used, which means that even if the best
+performers are unluckily not selected, they still make it to the next
+population. By default \texttt{gareal\_lsSelection} is used, which is
+proportional selection with fitness linear scaling.
+
+\subparagraph{Crossover}\label{crossover}
+
+The core of a genetic algorithm, the crossover operation, brings a means
+to generate additional `child' (next generation) genotypes through parts
+of the `genetic information' (parameter values) from either of the
+`parent' (current generation) genotypes. Alongside mutation, crossover
+applied on the reproducing population creates the new, next generation
+population. By default, \texttt{gareal\_laCrossover} is used, which is
+local arithmetic crossover.
+
+\subparagraph{Mutation}\label{mutation}
+
+The randomly shifting of the values of `genes' (parameters) within
+genotypes. The probability of mutation can be set by the user. Alongside
+crossover, mutation applied on the reproducing population creates the
+new, next generation population. By default, \texttt{gareal\_raMutation}
+is used, which is uniform random mutation.
+
+Crossover and mutation operations increase diversity in a population,
+allowing us to explore more of the sample space (exploration), while
+selection operations decrease diversity in favour of increased fitness
+(exploitation).
+
+
+
+
+\end{document}

@@ -3,5 +3,5 @@ title: "Comparison Presenation"
 format: html
 ---
 
-Gradient Descent:
 
+$$$$
