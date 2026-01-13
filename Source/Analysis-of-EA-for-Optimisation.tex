@@ -93,6 +93,39 @@
 \makeatother
 
 
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 
 
@@ -225,8 +258,8 @@ makes them far easier to apply to any context.
 \paragraph{Random search (RS)}\label{random-search-rs}
 
 The specific version of the random search algorithm is informed by the
-descriptions given by (\textbf{zabinsky2009?}). Algorithms are described
-by being `global' or `local'.
+descriptions given in Zabinsky (2011). Algorithms are described by being
+`global' or `local'.
 
 \textbf{Pure Random Search (PRS)} repeatedly performs a global search
 with a simply improving update procedure.
@@ -249,10 +282,10 @@ are generated locally from the hypersphere (the `(\(N-1\))-sphere', or
 the `surface of the \(N\)-ball') around \(\B x_k\).
 
 This is Rastrigin's \textbf{Fixed Step Size Random Search
-(FSSRS)}(\textbf{rastrigin1963?}).
+(FSSRS)}(Rastrigin 1963).
 
 An efficient way to sample uniformly from the surface of an \(N\)-ball
-is given by Marsaglia(\textbf{marsaglia1972?}).
+is given by Marsaglia (1972).
 
 \[\B v_{k+1} = \B x_k +h \B u,\]
 
@@ -277,16 +310,16 @@ requiring multiple candidates for each iteration. Our previous notation
 referencing a single candidate per iteration is thus no longer feasible.
 
 We are implementing genetic algorithms using the \texttt{GA} package, as
-described by Scrucca(\textbf{scrucca2013?}).
+described in Scrucca (2013).
 
-A brief explanation of the algorithm follows:
+A brief explanation of the updating procedure follows.
 
-\[\B \Theta^{\left(k+1\right)} = \Theta^{\left(k\right)}\] \#\#\#\#\#
-Fitness evaluation Fitness for each of the `genotypes' (candidate
-solutions), \(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is
-an arbitrary index of the genotype in the generation \(k\). This is
-typically the objective function of interest,
-\(\op f\left(\cdot\right)\).
+\subparagraph{Fitness evaluation}\label{fitness-evaluation}
+
+Fitness for each of the `genotypes' (candidate solutions),
+\(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is an arbitrary
+index of the genotype in the generation \(k\). This is typically the
+objective function of interest, \(\op f\left(\cdot\right)\).
 
 \subparagraph{Selection}\label{selection}
 
@@ -324,6 +357,31 @@ Crossover and mutation operations increase diversity in a population,
 allowing us to explore more of the sample space (exploration), while
 selection operations decrease diversity in favour of increased fitness
 (exploitation).
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-marsaglia1972}
+Marsaglia, George. 1972. {``Choosing a Point from the Surface of a
+Sphere.''} \emph{The Annals of Mathematical Statistics} 43 (2): 645--46.
+\url{https://doi.org/10.1214/aoms/1177692644}.
+
+\bibitem[\citeproctext]{ref-rastrigin1963}
+Rastrigin, L. A. 1963. {``The Convergence of the Random Search Method in
+the Extremal Control of a Many Parameter System.''} \emph{Automaton \&
+Remote Control} 24: 1337--42.
+\url{https://cir.nii.ac.jp/crid/1573950398967802624}.
+
+\bibitem[\citeproctext]{ref-scrucca2013}
+Scrucca, Luca. 2013. {``{\textbf{GA}}: A Package for Genetic Algorithms
+in{\emph{R}}.''} \emph{Journal of Statistical Software} 53 (4).
+\url{https://doi.org/10.18637/jss.v053.i04}.
+
+\bibitem[\citeproctext]{ref-zabinsky2011}
+Zabinsky, Zelda B. 2011. {``Random Search Algorithms.''} \emph{Wiley
+Encyclopedia of Operations Research and Management Science}, January.
+\url{https://doi.org/10.1002/9780470400531.eorms0704}.
+
+\end{CSLReferences}
 
 
 

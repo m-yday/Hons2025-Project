@@ -61,7 +61,7 @@ Also known as Direct Search, Pattern Search, or Black-Box Methods.
 These algorithms do not make use of gradient nor of hessian information. This makes them far easier to apply to any context. 
 
 #### Random search (RS)
-The specific version of the random search algorithm is informed by the descriptions given by [@zabinsky2009]. Algorithms are described by being 'global' or 'local'.
+The specific version of the random search algorithm is informed by the descriptions given in @zabinsky2011. Algorithms are described by being 'global' or 'local'.
 
 **Pure Random Search (PRS)** repeatedly performs a global search with a simply improving update procedure.
 
