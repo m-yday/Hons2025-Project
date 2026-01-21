@@ -5,10 +5,14 @@ This project contains a comparison of optimisation algorithms,
 with a focus on Genetic Algorithms, with the goal to better understand 
 how useful the 'evolution' metaphor is.
 
-![Newton-Raphson with nu=0.5.](Render/newt_raph_n0.5.gif)
+![](Render/newt_raph_n0.5.gif)
+**Newton-Raphson with nu=0.5.**
 
-![Gradient descent with nu=0.2.](Render/grad_desc_n0.2.gif)
+![](Render/grad_desc_n0.2.gif)
+**Gradient descent with nu=0.2.**
 
-![Pure random search.](Render/pure_rand_search.gif)
+![](Render/pure_rand_search.gif)
+**Pure random search.**
 
-![Fixed step size random search with nu=0.2.](Render/rand_search_n0.2.gif)
+![](Render/rand_search_n0.2.gif)
+**Fixed step size random search with nu=0.2.**
