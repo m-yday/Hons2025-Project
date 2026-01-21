@@ -5,12 +5,12 @@
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 %
 \documentclass[
-  a4paperpaper,
+  a4paper,
   DIV=11,
   numbers=noendperiod]{scrartcl}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
-\setcounter{secnumdepth}{2}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -139,6 +139,8 @@
  
 
 
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
 \newcommand{\B}[1]{\boldsymbol{#1}}
 \newcommand{\+}{\phantom{-}}
 \newcommand{\op}[1]{\operatorname{#1}}
@@ -200,7 +202,7 @@
 
 \title{Analysis of Evolutionary Algorithms for Optimisation}
 \author{Shvet Maharaj}
-\date{12 January 2026}
+\date{21 January 2026}
 \begin{document}
 \maketitle
 
@@ -211,9 +213,59 @@
 \tableofcontents
 }
 
-\section{Design}\label{design}
+\tcbset{enhanced}
 
-\subsection{Update procedures}\label{update-procedures}
+\section{Introduction}\label{introduction}
+
+\section{Literature Review}\label{literature-review}
+
+Optimisation can be thought of as a tool-selection problem. Different
+optimisation paradigms are the tools in your toolbox. A certain
+optimisation problem may be placed in front of you, the properties of
+which will inform which tools would suit the application. Each tool
+would have their set of tradeoffs -- you \emph{could} use a sledgehammer
+to nail together a wooden frame, and using a ball-peen hammer to take
+down a wall is certainly\ldots{} possible, though it clearly would be
+more exhausting to tackle each of those problems in such a way.
+
+With optimisation, Wolpert \& Macready's `No Free Lunch' theorems inform
+us that finding an optimisation strategy that is suited to a certain
+problem is how we gain benefits between different optimisation paradigms
+-- ``performance over one class of problems is offset by performance
+over another class'' (Wolpert and Macready 1997).
+
+It is typical that gradient methods perform better than function-value
+methods; with hessian methods performing even better so. Although it is
+important to note that those methods do depend on being able to
+calculate or approximate gradients or hessians for the optimisation
+problem at hand.
+
+For optimisation problems where hessians and gradients can be found, and
+where they are \emph{useful} to optimisation algorithms (as opposed to
+being unstable to calculate, deceptive, or otherwise non-informative),
+the use of algorithms which can take advantage of them would be
+\emph{expected} to be superior.
+
+For those cases where usage of either gradients or hessians are
+impossible or otherwise unfeasible, function-value methods are
+available. While this flexibility in which optimisation problems they
+can be applied to is beneficial, function-value methods losing the
+information available from gradients or hessians would either have no
+effect or a detrimental effect on an algorithm's performance in
+optimisation. I.e., it would not be useful to use such a method when
+ones better suited to a problem exist. For this reason function-value
+methods like genetic algorithms are most informatively compared with
+fellow function-value methods.
+
+This paper will primarily discuss the difference between genetic
+algorithms and their closest competitors: derivative-free optimisation
+algorithms, or black-box methods.
+
+\section{Methodology}\label{methodology}
+
+\subsection{Design}\label{design}
+
+\subsubsection{Update procedures}\label{update-procedures}
 
 Where noted, a \emph{strictly improving update procedure} will be used
 alongside the updating equations, defined as:
@@ -229,33 +281,38 @@ the algorithm in the next iteration (thus, the algorithm updates on
 deterministic algorithms. The best solution, \(\B x_k\) is simply stored
 as the algorithm progresses.
 
-\subsection{Updating equations}\label{updating-equations}
+\subsubsection{Updating equations}\label{updating-equations}
 
-At the core of this exploration of the genetic algorithm, and other
-methods for optimisation, are the \emph{updating equations}. These
-define how exactly the optimisation paradigm attempts to iteratively
-improve a candidate solution, \(\B v\).
+At the core of this exploration of genetic algorithms and other methods
+for optimisation, are the \emph{updating equations}. These define how
+each optimisation paradigm attempts to iteratively improve a candidate
+solution, \(\B v\).
 
-\subsubsection{Hessian methods}\label{hessian-methods}
+\paragraph{Hessian methods}\label{hessian-methods}
 
-\paragraph{Newton-Raphson}\label{newton-raphson}
+Methods which utilise exact or approximate hessians.
 
+\subparagraph{Newton-Raphson}\label{newton-raphson}
+
+Calculates the hessian.
 \[\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}\]
 
-\subsubsection{Gradient methods}\label{gradient-methods}
+\paragraph{Gradient methods}\label{gradient-methods}
 
-\paragraph{Gradient descent}\label{gradient-descent}
+Methods which utlise exact or approximate gradients.
+
+\subparagraph{Gradient descent}\label{gradient-descent}
 
 \[\B v_{k+1} = \B v_k -\nu \nabla f\left( \B v_k \right),\] where
 \(\nu\) is the learning rate.
 
-\subsubsection{Function value methods}\label{function-value-methods}
+\paragraph{Function value methods}\label{function-value-methods}
 
 Also known as Direct Search, Pattern Search, or Black-Box Methods. These
 algorithms do not make use of gradient nor of hessian information. This
 makes them far easier to apply to any context.
 
-\paragraph{Random search (RS)}\label{random-search-rs}
+\subparagraph{Random search (RS)}\label{random-search-rs}
 
 The specific version of the random search algorithm is informed by the
 descriptions given in Zabinsky (2011). Algorithms are described by being
@@ -287,7 +344,7 @@ This is Rastrigin's \textbf{Fixed Step Size Random Search
 An efficient way to sample uniformly from the surface of an \(N\)-ball
 is given by Marsaglia (1972).
 
-\[\B v_{k+1} = \B x_k +h \B u,\]
+\[\B v_{k+1} = \B x_k +h \B u.\]
 
 Here, \(\B u\) is a normalised \(N\)-dimensional vector sample from the
 standard normal distribution such that,
@@ -296,14 +353,16 @@ standard normal distribution such that,
 \(\B z \sim \mathcal{N}_N\left(0,1\right),\) and where \(h\) is a step
 size hyperparameter.
 
-\paragraph{Genetic algorithms}\label{genetic-algorithms}
+\subparagraph{Genetic algorithms}\label{genetic-algorithms}
 
 Genetic algorithms are a subset of evolutionary algorithms, typified by
-the use of all of three genetic operators: crossover, selection, and
-mutation. A \emph{real-coded} (in reference to \(\mathbb R\), the real
-number set) genetic algorithm is used for greater applicability to
-arbitrary problems and models, despite genetic processes occurring with
-a discrete set of genes (ACGT) in nature.
+the use of three genetic operators: two-parent \textbf{crossover},
+fitness-based \textbf{selection}, and random \textbf{mutation}.
+
+\emph{Real-coded} (in reference to \(\mathbb R\), the real number set)
+genetic algorithms are used in this paper for greater applicability to
+arbitrary problems and models -- despite genetic processes occurring
+with a discrete set of genes (ACGT) in nature.
 
 Notation does shift here, due to the genetic algorithm necessarily
 requiring multiple candidates for each iteration. Our previous notation
@@ -314,14 +373,14 @@ described in Scrucca (2013).
 
 A brief explanation of the updating procedure follows.
 
-\subparagraph{Fitness evaluation}\label{fitness-evaluation}
+\textbf{Fitness evaluation}
 
 Fitness for each of the `genotypes' (candidate solutions),
 \(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is an arbitrary
 index of the genotype in the generation \(k\). This is typically the
 objective function of interest, \(\op f\left(\cdot\right)\).
 
-\subparagraph{Selection}\label{selection}
+\textbf{Selection}
 
 A subset of genotypes from the current generation's population becomes
 selected as a separate population known as the `reproducing population'
@@ -335,7 +394,11 @@ performers are unluckily not selected, they still make it to the next
 population. By default \texttt{gareal\_lsSelection} is used, which is
 proportional selection with fitness linear scaling.
 
-\subparagraph{Crossover}\label{crossover}
+\begin{tcolorbox}[title=Selection with linear scaling: \texttt{gareal\_lsSelection()}]
+Algorithm explanation:
+\end{tcolorbox}
+
+\textbf{Crossover}
 
 The core of a genetic algorithm, the crossover operation, brings a means
 to generate additional `child' (next generation) genotypes through parts
@@ -345,7 +408,11 @@ applied on the reproducing population creates the new, next generation
 population. By default, \texttt{gareal\_laCrossover} is used, which is
 local arithmetic crossover.
 
-\subparagraph{Mutation}\label{mutation}
+\begin{tcolorbox}[title=Local arithmetic crossover: \texttt{gareal\_laCrossover()}]
+Algorithm explanation:
+\end{tcolorbox}
+
+\textbf{Mutation}
 
 The randomly shifting of the values of `genes' (parameters) within
 genotypes. The probability of mutation can be set by the user. Alongside
@@ -353,10 +420,34 @@ crossover, mutation applied on the reproducing population creates the
 new, next generation population. By default, \texttt{gareal\_raMutation}
 is used, which is uniform random mutation.
 
+\begin{tcolorbox}[title=Uniform random mutation: \texttt{gareal\_raMutation()}]
+Algorithm explanation:
+\end{tcolorbox}
+
 Crossover and mutation operations increase diversity in a population,
 allowing us to explore more of the sample space (exploration), while
 selection operations decrease diversity in favour of increased fitness
 (exploitation).
+
+\subsection{Analysis}\label{analysis}
+
+\section{Results}\label{results}
+
+\section{Conclusion}\label{conclusion}
+
+\subsection{Areas for extension}\label{areas-for-extension}
+
+Testing additional random search algorithms: - Luus--Jaakola (LJ) -
+Improving Hit-and-Run (IHR) - Simulated Annealing
+
+Testing against Travelling Salesman Problem (or problems where the
+search space grows rapidly)
+
+mention: metaheuristics converging iterative / single step / (what word
+was it) optimisation
+
+\section*{Bibliography}\label{bibliography}
+\addcontentsline{toc}{section}{Bibliography}
 
 \phantomsection\label{refs}
 \begin{CSLReferences}{1}{0}
@@ -375,6 +466,11 @@ Remote Control} 24: 1337--42.
 Scrucca, Luca. 2013. {``{\textbf{GA}}: A Package for Genetic Algorithms
 in{\emph{R}}.''} \emph{Journal of Statistical Software} 53 (4).
 \url{https://doi.org/10.18637/jss.v053.i04}.
+
+\bibitem[\citeproctext]{ref-wolpert1997}
+Wolpert, D. H., and W. G. Macready. 1997. {``No Free Lunch Theorems for
+Optimization.''} \emph{IEEE Transactions on Evolutionary Computation} 1
+(1): 67--82. \url{https://doi.org/10.1109/4235.585893}.
 
 \bibitem[\citeproctext]{ref-zabinsky2011}
 Zabinsky, Zelda B. 2011. {``Random Search Algorithms.''} \emph{Wiley

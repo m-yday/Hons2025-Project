@@ -64,17 +64,24 @@ opt_trace <- matrix(NA, nrow=iterlim, ncol=2*DIM+1,
 
 nu_global<-0.05
 
-step_gradient_descent <- function(x,nu=nu_global){
+step_gradient_descent <- function(x,nu=0.2){
   next_x <- x-nu*grad(obj,x)
   return(next_x)
 }
 
-step_random_search <- function(x,nu=nu_global,bounds=minmax){
-  next_x <- rnu*runif(n=DIM,bounds[1],bounds[2]) 
+step_random_search <- function(x,nu=.2){
+  u <- rnorm(n=DIM)
+  r <- sqrt(t(u)%*%u)
+  next_x <- x+nu*(u/r)
   return(next_x)
 }
 
-step_newton_raphson <- function(x,nu=nu_global){
+step_pure_rs <- function(x,nu=.2,bounds=minmax){
+  next_x <- runif(n=DIM,bounds[1],bounds[2]) 
+  return(next_x)
+}
+
+step_newton_raphson <- function(x,nu=0.5){
   next_x <- x - nu*(solve(hessian(obj,x))) %*% (grad(obj,x))
   return(next_x)
 }
@@ -85,8 +92,8 @@ step_genetic_algorithm <- function(){
 }
 
 # defines which updating equation is used
-update_opt <- function(x, nu=nu_global){
-  step_random_search(x,nu)
+update_opt <- function(x, min_x, nu=nu_global){
+  step_gradient_descent(x)
 }
 
 
@@ -97,7 +104,7 @@ opt_trace[1,] <- c(1,xi,min_x)
 
 for(i in 2:iterlim){
   
-  xi <- update_opt(xi) 
+  xi <- update_opt(xi,min_x) 
   yi <- obj(xi) #objective being minimised
   
   if(yi<min_y){
@@ -109,7 +116,16 @@ for(i in 2:iterlim){
   
 }
 
-#outrs <-
+
+pgd <- pobj+
+  geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
+             colour='yellow',shape=4)+
+  geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
+             colour="white",shape=4)+
+  geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
+  scale_colour_viridis_c(option="H",begin=0.3,end=0.9)
+
+outgd <-
 animate(
   pobj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
@@ -120,17 +136,26 @@ animate(
   scale_colour_viridis_c(option="H",begin=0.3,end=0.9)+
   transition_states(states=Iteration,wrap=FALSE)+
   shadow_wake(wake_length=0.3)+
-  labs(subtitle = "Iteration: {previous_state}."))
+  labs(subtitle = "Iteration: {previous_state}.")
+)
 
-anim_save(nframes= iterlim,
-          filename="newt_raph_1.gif",
-          path="../Render",
-          animation=outnr)
+
+# anim_save(nframes= iterlim,
+#           filename="rand_search_n0.2.gif",
+#           path="../Render",
+#           animation=outrs)
+
+
 
 outgd
+outprs
 outrs
 outnr
 #outga
 
-
+pnr
+pprs
+prs
+pgd
+#pga
 
