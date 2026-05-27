@@ -19,6 +19,7 @@ format:
       - text: |
           \usepackage{tcolorbox}
           \tcbuselibrary{skins}
+          \usepackage{hyperref}
           \newcommand{\B}[1]{\boldsymbol{#1}}
           \newcommand{\+}{\phantom{-}}
           \newcommand{\op}[1]{\operatorname{#1}}
@@ -29,72 +30,70 @@ execute:
 
 \tcbset{enhanced}
 
-# Introduction 
+\newpage
 
+# Introduction
 
+# Literature Review
 
-# Literature Review 
+Optimisation can be thought of as a tool-selection problem. With different optimisation paradigms being the tools in your toolbox. A certain optimisation problem may be placed in front of you, the properties of which will inform which tools would suit the application. Each tool would have their unique set of tradeoffs --- you *could* use a sledgehammer to nail together a wooden frame, and using a ball-peen hammer to take down a wall is certainly... possible, though it clearly would be more exhausting to tackle each of those problems in such a way.
 
-Optimisation can be thought of as a tool-selection problem. Different optimisation paradigms are the tools in your toolbox. A certain optimisation problem may be placed in front of you, the properties of which will inform which tools would suit the application. Each tool would have their set of tradeoffs -- you _could_ use a sledgehammer to nail together a wooden frame, and using a ball-peen hammer to take down a wall is certainly... possible, though it clearly would be more exhausting to tackle each of those problems in such a way.
+With optimisation, 'No Free Lunch' theorems inform us that finding an optimisation strategy that is suited to a certain problem is how we gain benefits between different optimisation paradigms --- "any elevated
+performance over one class of problems is offset by performance over another class" [@wolpert1997].
 
-With optimisation, Wolpert & Macready's 'No Free Lunch' theorems inform us that finding an optimisation strategy that is suited to a certain problem is how we gain benefits between different optimisation paradigms -- "performance over one class of problems is offset by performance over another class" [@wolpert1997].
+It is typical that gradient methods perform better than function-value methods; with hessian methods performing even better. Although it is important to note that those methods do depend on being able to calculate or approximate gradients or hessians for the optimisation problem at hand.
 
-It is typical that gradient methods perform better than function-value methods; with hessian methods performing even better so. Although it is important to note that those methods do depend on being able to calculate or approximate gradients or hessians for the optimisation problem at hand. 
+For optimisation problems where hessians and gradients can be found, and where they are *useful* to optimisation algorithms (as opposed to being unstable to calculate, deceptive/misleading, or otherwise non-informative), the use of algorithms which can take advantage of them would be *expected* to be superior.
 
-For optimisation problems where hessians and gradients can be found, and where they are _useful_ to optimisation algorithms (as opposed to being unstable to calculate, deceptive, or otherwise non-informative), the use of algorithms which can take advantage of them would be _expected_ to be superior. 
+For those cases where usage of either gradients or hessians are impossible or otherwise unfeasible, function-value (or direct) methods are available. While this flexibility in which optimisation problems they can be applied to is beneficial, function-value methods losing the information available from gradients or hessians would either have no effect or a detrimental effect on an algorithm's performance in optimisation. I.e., it would not be useful to use such a method when ones better suited to a problem exist. For this reason function-value methods like genetic algorithms are most informatively compared with fellow function-value methods.
 
-For those cases where usage of either gradients or hessians are impossible or otherwise unfeasible, function-value methods are available. While this flexibility in which optimisation problems they can be applied to is beneficial, function-value methods losing the information available from gradients or hessians would either have no effect or a detrimental effect on an algorithm's performance in optimisation. I.e., it would not be useful to use such a method when ones better suited to a problem exist.
-For this reason function-value methods like genetic algorithms are most informatively compared with fellow function-value methods. 
-
-This paper will primarily discuss the difference between genetic algorithms and their closest competitors: derivative-free optimisation algorithms, or black-box methods. 
+This paper will primarily discuss the difference between genetic algorithms and their closest competitors: derivative-free optimisation algorithms, or black-box methods.
 
 # Methodology
 
 ## Design
 
 ### Update procedures
-Where noted, a _strictly improving update procedure_ will be used alongside the updating equations, defined as: 
-$$\B x_{k+1} = \begin{cases}\B v_{k+1}&\text{if} \quad \op f(\B v_{k+1})< \op f(\B x_k),\\\B x_k & \text{otherwise.}\end{cases}$$
-Where $\B x_k$ is the best performing point at iteration $k$, and 
-$\B v_{k+1}$ is the candidate point for the next iteration, $k+1$. 
-This candidate point is what is generated by the updating equations.
 
-Alternatively, the update procedure could be a simple iterative updating procedure, where each updated point, $\B v_{k+1}$, is used directly by the algorithm in the next iteration (thus, the algorithm updates on $\B v_k$, instead of $\B x_k$). This would correspond more so to the deterministic algorithms. The best solution, $\B x_k$ is simply stored as the algorithm progresses. 
+Where noted, a *strictly improving update procedure* will be used alongside the updating equations, defined as: $$\B x_{k+1} = \begin{cases}\B v_{k+1}&\text{if} \quad \op f(\B v_{k+1})< \op f(\B x_k),\\\B x_k & \text{otherwise.}\end{cases}$$ Where $\B x_k$ is the best performing point at iteration $k$, and $\B v_{k+1}$ is the candidate point for the next iteration, $k+1$. This candidate point is what is generated by the updating equations.
+
+Alternatively, the update procedure could be a simple iterative updating procedure, where each updated point, $\B v_{k+1}$, is used directly by the algorithm in the next iteration (thus, the algorithm updates on $\B v_k$, instead of $\B x_k$). This would correspond more so to the deterministic algorithms. The best solution, $\B x_k$ is simply stored as the algorithm progresses.
 
 ### Updating equations
-At the core of this exploration of genetic algorithms and other methods for optimisation, are the _updating equations_. These define how each optimisation paradigm attempts to iteratively improve a candidate solution, $\B v$.
+
+At the core of this exploration of genetic algorithms and other methods for optimisation, are the *updating equations*. These define how each optimisation paradigm attempts to iteratively improve a candidate solution, $\B v$.
 
 #### Hessian methods
-Methods which utilise exact or approximate hessians. 
+
+Methods which utilise exact or approximate hessians.
 
 ##### Newton-Raphson
-Calculates the hessian.
-$$\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}$$
+
+Calculates the hessian. $$\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}$$
 
 #### Gradient methods
+
 Methods which utlise exact or approximate gradients.
 
 ##### Gradient descent
 
-$$\B v_{k+1} = \B v_k -\nu \nabla f\left( \B v_k \right),$$
-where $\nu$ is the learning rate.
+$$\B v_{k+1} = \B v_k -\nu \nabla f\left( \B v_k \right),$$ where $\nu$ is the learning rate.
 
+#### Function value methods
 
-#### Function value methods 
-Also known as Direct Search, Pattern Search, or Black-Box Methods.
-These algorithms do not make use of gradient nor of hessian information. This makes them far easier to apply to any context. 
+Also known as Direct Search, Pattern Search, or Black-Box Methods. These algorithms do not make use of gradient nor of hessian information. This makes them far easier to apply to any context.
 
 ##### Random search (RS)
+
 The specific version of the random search algorithm is informed by the descriptions given in @zabinsky2011. Algorithms are described by being 'global' or 'local'.
 
 **Pure Random Search (PRS)** repeatedly performs a global search with a simply improving update procedure.
 
-The updating equation is defined as,
-$$\B v_{k+1} = \B u.$$
+The updating equation is defined as, $$\B v_{k+1} = \B u.$$
 
-It is notable that neither of the terms $\B x_k$ nor $\B v_k$ — the best or candidate points found by or for iteration $k$ — are present in this formula. 
+It is notable that neither of the terms $\B x_k$ nor $\B v_k$ — the best or candidate points found by or for iteration $k$ — are present in this formula.
 
-Each generated point is _independent_ of any previous point. The major benefit of this is PRS is 'embarrassingly parallelisable'. This is the only optimisation algorithm that will have this property in this paper.
+Each generated point is *independent* of any previous point. The major benefit of this is PRS is 'embarrassingly parallelisable'. This is the only optimisation algorithm that will have this property in this paper.
 
 We test also an additional variant of RS, where the global search is either performed solely for the starting point), $\B x_0$, or skipped entirely in favour of a user-defined starting point. Subsequent points are generated locally from the hypersphere (the '($N-1$)-sphere', or the 'surface of the $N$-ball') around $\B x_k$.
 
@@ -106,25 +105,26 @@ $$\B v_{k+1} = \B x_k +h \B u.$$
 
 Here, $\B u$ is a normalised $N$-dimensional vector sample from the standard normal distribution such that,
 
-$\B u = \frac1{\lVert \B z \rVert}\B z$ and $\B z \sim \mathcal{N}_N\left(0,1\right),$
-and where $h$ is a step size hyperparameter.
+$\B u = \frac1{\lVert \B z \rVert}\B z$ and $\B z \sim \mathcal{N}_N\left(0,1\right),$ and where $h$ is a step size hyperparameter.
 
 ##### Genetic algorithms
 
-Genetic algorithms are a subset of evolutionary algorithms, typified by the use of three genetic operators: two-parent **crossover**, fitness-based **selection**, and random **mutation**. 
+Genetic algorithms are a subset of evolutionary algorithms, typified by the use of three genetic operators: two-parent **crossover**, fitness-based **selection**, and random **mutation**.
 
-_Real-coded_ (in reference to $\mathbb R$, the real number set) genetic algorithms are used in this paper for greater applicability to arbitrary problems and models -- despite genetic processes occurring with a discrete set of genes (ACGT) in nature.
+*Real-coded* (in reference to $\mathbb R$, the real number set) genetic algorithms are used in this paper for greater applicability to arbitrary problems and models -- despite genetic processes occurring with a discrete set of genes (ACGT) in nature.
 
-Notation does shift here, due to the genetic algorithm necessarily requiring multiple candidates for each iteration. Our previous notation referencing a single candidate per iteration is thus no longer feasible. 
+Notation does shift here, due to the genetic algorithm necessarily requiring multiple candidates for each iteration. Our previous notation referencing a single candidate per iteration is thus no longer feasible.
 
-We are implementing genetic algorithms using the `GA` package, as described in @scrucca2013. 
+We are implementing genetic algorithms using the `GA` package, as described in @scrucca2013.
 
 A brief explanation of the updating procedure follows.
 
 ###### **Fitness evaluation**
-Fitness for each of the 'genotypes' (candidate solutions), $\theta_i^{\left(k\right)}$ is calculated, where $i$ is an arbitrary index of the genotype in the generation $k$. This is typically the objective function of interest, $\op f\left(\cdot\right)$. 
+
+Fitness for each of the 'genotypes' (candidate solutions), $\theta_i^{\left(k\right)}$ is calculated, where $i$ is an arbitrary index of the genotype in the generation $k$. This is typically the objective function of interest, $\op f\left(\cdot\right)$.
 
 ###### **Selection**
+
 A subset of genotypes from the current generation's population becomes selected as a separate population known as the 'reproducing population' Genotypes are selected (with replacement) through a weighted selection process, based typically proportionally on the fitness of each genotype, $\op f\left(\theta_i^{\left(k\right)}\right)$, with probability $p_i^{\left(k\right)}$.
 
 An elitist strategy can be used, which means that even if the best performers are unluckily not selected, they still make it to the next population. By default `gareal_lsSelection` is used, which is proportional selection with fitness linear scaling.
@@ -134,6 +134,7 @@ Algorithm explanation:
 \end{tcolorbox}
 
 ###### **Crossover**
+
 The core of a genetic algorithm, the crossover operation, brings a means to generate additional 'child' (next generation) genotypes through parts of the 'genetic information' (parameter values) from either of the 'parent' (current generation) genotypes. Alongside mutation, crossover applied on the reproducing population creates the new, next generation population. By default, `gareal_laCrossover` is used, which is local arithmetic crossover.
 
 \begin{tcolorbox}[title=Local arithmetic crossover: \texttt{gareal\_laCrossover()}]
@@ -141,6 +142,7 @@ Algorithm explanation:
 \end{tcolorbox}
 
 ###### **Mutation**
+
 The randomly shifting of the values of 'genes' (parameters) within genotypes. The probability of mutation can be set by the user. Alongside crossover, mutation applied on the reproducing population creates the new, next generation population. By default, `gareal_raMutation` is used, which is uniform random mutation.
 
 \begin{tcolorbox}[title=Uniform random mutation: \texttt{gareal\_raMutation()}]
@@ -151,26 +153,36 @@ Crossover and mutation operations increase diversity in a population, allowing u
 
 ## Analysis
 
+Traces of each algorithm for 100 iterations on a 2-dimensional parabolic test surface.
 
+Coloured dots show the progression of the best point found by each algorithm.
 
-# Results 
+White crosses show each point checked by the algorithm.
 
+Note that these traces are intended to be viewed as an animation. These are accessible in \href{https://github.com/m-yday/Hons2025-Project}{the Github repository for this project}.
+
+![Newton-Raphson with nu=0.5.](../Render/newt_n0.5.png){width="400"}
+
+![Gradient descent with nu=0.2.](../Render/gradient_desc_n0.2.png){width="400"}
+
+![Pure random search.](../Render/pure_rs.png){width="400"}
+
+![Fixed step size random search with nu=0.2.](../Render/rand_search_n0.2.png){width="400"}
+
+# Results
 
 # Conclusion
-## Areas for extension 
+
+## Areas for extension
+
 <!--aka, how i don't go down too many rabbit holes while working on this-->
-Testing additional random search algorithms:
-- Luus–Jaakola (LJ)
-- Improving Hit-and-Run (IHR)
-- Simulated Annealing
+
+Testing additional random search algorithms: - Luus–Jaakola (LJ) - Improving Hit-and-Run (IHR) - Simulated Annealing
 
 Testing against Travelling Salesman Problem (or problems where the search space grows rapidly)
 
-mention:
-metaheuristics
-converging iterative / single step / (what word was it) optimisation
+mention: metaheuristics converging iterative / single step / (what word was it) optimisation
 
+\newpage
 
 # Bibliography
-
-

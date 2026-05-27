@@ -1,6 +1,6 @@
 # game params
 
-n_obst    <- 40 #J
+n_obst    <- 40 #J 
 obst_size <- 0.02 #r (radius) 2*r = square side length
 
 delta <- 0.05
@@ -126,13 +126,61 @@ detect_collision <- function(x,obst){
 }
 
 eval_game_state <- function(x,obst,step){
-  if (step > iterlim || detect_collision(x, obst))
+  if (step >= iterlim || detect_collision(x, obst))
     return(-1)  
   
   if (x[2] >= bounds[2,2])
     return(1)
   
   return(0)
+}
+
+#-----------------------------NEURAL NETWORK------------------------------------
+
+create_IterativeNN <- function(theta, m=c(5,5),p=2,q=2,
+                               npars=p*m[1] +m[1]*m[2] +m[2]*q +m[1]+m[2]+q){
+  stopifnot(is.numeric(theta) || length(theta)==npars)
+  
+  # --- activation functions ---
+  sig1 <- function(z) tanh(z)    # first m hidden layer
+  sig2 <- function(z) tanh(z)    # second m hidden layer
+  sig3 <- function(z) tanh(z)    # output layer (output constrained from -1 to 1)
+  
+  # allocating theta to weights and biases
+  index <- 1:(p*m[1])
+  W1 <- matrix(theta[index],p,m[1])    # p*m1
+  index <- max(index)+ 1:(m[1]*m[2])
+  W2 <- matrix(theta[index],m[1],m[2]) # m1*m2
+  index <- max(index)+ 1:(m[2]*q)
+  W3 <- matrix(theta[index],m,q)       # m2*q
+  index <- max(index)+ 1:m[1]
+  b1 <- matrix(theta[index],m[2],1)    # m1*1
+  index <- max(index)+ 1:m[2]
+  b2 <- matrix(theta[index],m[2],1)    # m2*1
+  index <- max(index)+ 1:q
+  b3 <- matrix(theta[index],q,1)       # q*1
+  
+  W <- list(W1,W2,W3)
+  b <- list(b1,b2,b3)
+  sig <- list(sig1,sig2,sig3)
+  
+  model_object <- structure(list(W=W,b=b,sig=sig),
+                            class="IterativeNN",
+                            hidden=length(m)) 
+  
+  model_func <- function(x){ #func takes position |> outputs control vector
+    #note: since the coordinates are ONE observation, 
+    # it must be a 1x2 matrix when it starts. 1 observation of 2 position vectors
+    A0   <- t(x)                              # p*1
+    A1   <- sig[[1]]( t(W[[1]])%*%A0+b[[1]] ) # m1*1
+    A2   <- sig[[2]]( t(W[[2]])%*%A1+b[[2]] ) # m2*1
+    A3   <- sig[[3]]( t(W[[3]])%*%A2+b[[3]] ) # q*1
+    c    <- t(A3)  # 1*q
+    
+    return(c)
+  }
+  
+  return(list(func=model_func, comps=model_object))
 }
 
 #--------------------------------RUN GAME--------------------------------------#
@@ -154,7 +202,7 @@ colours <- c("bound" = 'firebrick',
 
 base_field <- generate_field(colours)
 
-set.seed(2)
+# set.seed(2)
 obst <- cbind(X_1  = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
               X_2  = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
               Size = rep(obst_size, n_obst))
@@ -236,7 +284,7 @@ run_game <- function(iterative_func){
   return(list(data=data, scores=run_scores, raw=position))
 }
 
-
+npars <- 57
 #initial theta
 theta <- runif(npars,-1,1)
 
@@ -244,21 +292,29 @@ theta <- runif(npars,-1,1)
 model <- create_IterativeNN(theta)
 
 
-for(seed in 1:10){
-  set.seed(seed)
+for(run in 1:10){
   game_out <- run_game(model$func)
   #dev.new(noRStudioGD = TRUE)
-  this_field <- field
   
-  this_field <- this_field + geom_point(
+  # as to not create an excessive amount of layers,
+  # the entire dataset is plotted each time
+  
+  this_field <- field # clear previous layers
+  
+  this_field <- field + geom_point( #plot all runs as one layer
     data=game_out$data,
     mapping=aes(x=X_1,y=X_2,fill=Run,colour=State),
     shape=21,
     size=1,
-    stroke=0.5,
+    stroke=1,
     show.legend = FALSE
   ) +
-    labs(title=sprintf("Seed = %d",seed))
+    labs(title=sprintf("Run = %d",run))
   
   plot(this_field)
 }
+sum(game_out$scores)
+
+#create wrapper which outputs scores 
+
+

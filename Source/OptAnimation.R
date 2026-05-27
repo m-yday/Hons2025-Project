@@ -6,14 +6,31 @@ library(gifski)
 library(GA)
 library(numDeriv)
 
-minmax <- c(-5,5)
+scalefactor <- 1
+minmax <- c(-5,5)*scalefactor
 DIM <- 2
-resolution <- 0.05
+resolution <- 0.05*scalefactor
 
-startbounds <- c(-5,-4)
+startbounds <- c(-1,-1)*scalefactor
 iterlim <- 100
 
-obj <- function(x){ t(x)%*%x } #sum(x^2) 
+test_rastrigin <- function(x){
+  A<-10
+  n<-length(x)
+  f <- A*n + sum(x^2-A*cos(0.5*pi*x))
+  return(f)
+}
+
+# 2 dimensions only
+test_eggholder <- function(x){
+  x1<-x[1]
+  x2<-x[2]
+  f <- -(x2+47)*sin(sqrt(abs(x1/2+(x2+47))))-x1*sin(sqrt(abs(x1-(x2+47))))
+}
+
+obj <- function(x){ 
+  return(test_rastrigin(x))
+}
 # drop ensures the 1x1 matrix becomes a scalar
 
 #possibly useful?
@@ -24,7 +41,9 @@ obj.df <- function(X){
 
 
 base_theme <- theme_minimal() +
-  theme(aspect.ratio=1,legend.position = 'bottom')
+  theme(aspect.ratio=1,legend.position = 'bottom'
+        #panel.background = element_rect(fill='grey80')
+  )
 theme_set(base_theme)
 
 xseq <- seq(minmax[1],minmax[2],resolution) #symmetric. geom_tile is based on the centre of the tile.
@@ -49,7 +68,7 @@ pobj
 
 
 #next we follow the path of the optimisation function
-set.seed(1)
+#set.seed(1)
 start <- runif(n=DIM,startbounds[1],startbounds[2])
 names(start)=names(ggdata)[1:DIM]
 as_tibble(t(start))
@@ -93,7 +112,7 @@ step_genetic_algorithm <- function(){
 
 # defines which updating equation is used
 update_opt <- function(x, min_x, nu=nu_global){
-  step_gradient_descent(x)
+  step_random_search(x)
 }
 
 
@@ -117,7 +136,7 @@ for(i in 2:iterlim){
 }
 
 
-pgd <- pobj+
+p_static <- pobj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
              colour='yellow',shape=4)+
   geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
@@ -125,7 +144,9 @@ pgd <- pobj+
   geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
   scale_colour_viridis_c(option="H",begin=0.3,end=0.9)
 
-outgd <-
+p_static
+
+p_anim <-
 animate(
   pobj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
@@ -139,6 +160,8 @@ animate(
   labs(subtitle = "Iteration: {previous_state}.")
 )
 
+p_anim
+
 
 # anim_save(nframes= iterlim,
 #           filename="rand_search_n0.2.gif",
@@ -147,15 +170,15 @@ animate(
 
 
 
-outgd
-outprs
-outrs
-outnr
+# outgd
+# outprs
+# outrs
+# outnr
 #outga
 
-pnr
-pprs
-prs
-pgd
-#pga
+# pnr
+# pprs
+# prs
+# pgd
+# pga
 

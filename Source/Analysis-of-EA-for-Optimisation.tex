@@ -141,6 +141,7 @@
 
 \usepackage{tcolorbox}
 \tcbuselibrary{skins}
+\usepackage{hyperref}
 \newcommand{\B}[1]{\boldsymbol{#1}}
 \newcommand{\+}{\phantom{-}}
 \newcommand{\op}[1]{\operatorname{#1}}
@@ -202,7 +203,7 @@
 
 \title{Analysis of Evolutionary Algorithms for Optimisation}
 \author{Shvet Maharaj}
-\date{21 January 2026}
+\date{5 March 2026}
 \begin{document}
 \maketitle
 
@@ -215,41 +216,44 @@
 
 \tcbset{enhanced}
 
+\newpage
+
 \section{Introduction}\label{introduction}
 
 \section{Literature Review}\label{literature-review}
 
-Optimisation can be thought of as a tool-selection problem. Different
-optimisation paradigms are the tools in your toolbox. A certain
-optimisation problem may be placed in front of you, the properties of
-which will inform which tools would suit the application. Each tool
-would have their set of tradeoffs -- you \emph{could} use a sledgehammer
-to nail together a wooden frame, and using a ball-peen hammer to take
-down a wall is certainly\ldots{} possible, though it clearly would be
-more exhausting to tackle each of those problems in such a way.
+Optimisation can be thought of as a tool-selection problem. With
+different optimisation paradigms being the tools in your toolbox. A
+certain optimisation problem may be placed in front of you, the
+properties of which will inform which tools would suit the application.
+Each tool would have their unique set of tradeoffs --- you \emph{could}
+use a sledgehammer to nail together a wooden frame, and using a
+ball-peen hammer to take down a wall is certainly\ldots{} possible,
+though it clearly would be more exhausting to tackle each of those
+problems in such a way.
 
-With optimisation, Wolpert \& Macready's `No Free Lunch' theorems inform
-us that finding an optimisation strategy that is suited to a certain
-problem is how we gain benefits between different optimisation paradigms
--- ``performance over one class of problems is offset by performance
-over another class'' (Wolpert and Macready 1997).
+With optimisation, `No Free Lunch' theorems inform us that finding an
+optimisation strategy that is suited to a certain problem is how we gain
+benefits between different optimisation paradigms --- ``any elevated
+performance over one class of problems is offset by performance over
+another class'' (Wolpert and Macready 1997).
 
 It is typical that gradient methods perform better than function-value
-methods; with hessian methods performing even better so. Although it is
+methods; with hessian methods performing even better. Although it is
 important to note that those methods do depend on being able to
 calculate or approximate gradients or hessians for the optimisation
 problem at hand.
 
 For optimisation problems where hessians and gradients can be found, and
 where they are \emph{useful} to optimisation algorithms (as opposed to
-being unstable to calculate, deceptive, or otherwise non-informative),
-the use of algorithms which can take advantage of them would be
-\emph{expected} to be superior.
+being unstable to calculate, deceptive/misleading, or otherwise
+non-informative), the use of algorithms which can take advantage of them
+would be \emph{expected} to be superior.
 
 For those cases where usage of either gradients or hessians are
-impossible or otherwise unfeasible, function-value methods are
-available. While this flexibility in which optimisation problems they
-can be applied to is beneficial, function-value methods losing the
+impossible or otherwise unfeasible, function-value (or direct) methods
+are available. While this flexibility in which optimisation problems
+they can be applied to is beneficial, function-value methods losing the
 information available from gradients or hessians would either have no
 effect or a detrimental effect on an algorithm's performance in
 optimisation. I.e., it would not be useful to use such a method when
@@ -431,6 +435,58 @@ selection operations decrease diversity in favour of increased fitness
 
 \subsection{Analysis}\label{analysis}
 
+Traces of each algorithm for 100 iterations on a 2-dimensional parabolic
+test surface.
+
+Coloured dots show the progression of the best point found by each
+algorithm.
+
+White crosses show each point checked by the algorithm.
+
+Note that these traces are intended to be viewed as an animation. These
+are accessible in
+\href{https://github.com/m-yday/Hons2025-Project}{the Github repository for this project}.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/newt_n0.5.png}
+
+}
+
+\caption{Newton-Raphson with nu=0.5.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/gradient_desc_n0.2.png}
+
+}
+
+\caption{Gradient descent with nu=0.2.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/pure_rs.png}
+
+}
+
+\caption{Pure random search.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/rand_search_n0.2.png}
+
+}
+
+\caption{Fixed step size random search with nu=0.2.}
+
+\end{figure}%
+
 \section{Results}\label{results}
 
 \section{Conclusion}\label{conclusion}
@@ -445,6 +501,8 @@ search space grows rapidly)
 
 mention: metaheuristics converging iterative / single step / (what word
 was it) optimisation
+
+\newpage
 
 \section*{Bibliography}\label{bibliography}
 \addcontentsline{toc}{section}{Bibliography}

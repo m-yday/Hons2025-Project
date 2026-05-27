@@ -12,7 +12,7 @@ genetic_algorithm <- function(Theta, scores=rep(1L,nrow(Theta))){
   g <- nrow(Theta)
   stopifnot(g%%2==0)  #num of genomes must be a multiple of 2 
   p <- ncol(Theta)    #num of genes
-  
+   
   Theta_new <- crossover_recombination(Theta, scores) #g and p can be calculated within, but is it cheaper to perhaps calculate once and pass it along each generation?
   
 }
