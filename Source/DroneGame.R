@@ -24,19 +24,6 @@ obst_bounds[1:2,1:2] <- matrix(c(  -1, 1,
                                    -0.5, 1), ncol=2)
 
 
-# theta needs to be defined such that all the game parameters are present, such that the model can 'see' the details of the game
-# anything not present in the theta parameters is 'unknown' to the model or 
-# "assumed" by the model (i.e., universal properties -> dimensionality = 2) 
-
-# above does not seem to be true. that is based on a misunderstanding of theta.
-# the params do not include object locations.
-
-# theta structure:
-# num obstacles / trees
-# obstacle size (future: sizes?)
-# obstacle locations (x-y pairs)
-#
-
 #boundary points
 corner_bl  <- bounds[1,] #minimums (bottom left)
 corner_tr  <- bounds[2,] #maximums (top right)
@@ -65,7 +52,7 @@ lines <- lines |> add_column(
              "finish")
 )
 
-generate_field <- function(colours){
+generate_field <- function(colours,lines=lines){
   return(
     ggplot() + 
       geom_segment(data=lines,aes(x=x_1,
@@ -188,7 +175,8 @@ create_IterativeNN <- function(theta, m=c(5,5),p=2,q=2,
 
 #--------------------------------RUN GAME--------------------------------------#
 
-run_game <- function(iterative_func, drones = 10){
+# drones: drones to run per batch
+run_game <- function(iterative_func, drones = 10, obst){
   
   position <- array(NA, #position matrix extended for multiple runs
                     dim = c(iterlim,3,drones),
@@ -246,91 +234,126 @@ run_game <- function(iterative_func, drones = 10){
   score <- sum(run_scores,na.rm=TRUE)
   
   data <- do.call(rbind,asplit(position,3)) |> 
-    cbind("Run" = rep(1:runs,each=iterlim)) |>
+    cbind("Run" = rep(1:drones,each=iterlim)) |>
     na.omit() |>
     as_tibble() |>
     mutate(State=as_factor(State),
            Run=as_factor(Run+1))
   
-  return(list(data=data, scores=run_scores, raw=position))
+  return(list(data=data, scores=run_scores, obstacles=obst, raw=position))
 }
 
 
+# plotting output of run_game
+plot_game <- function(game_obj){
+  d <- dim(game_obj$raw)[3]
+  run_colours <- viridisLite::viridis(n=d,
+                                      alpha=0.7,begin=0.2,end=0.8,option="B")
+  names(run_colours)<-c(1:d+1)
+  
+  colours <- c("bound" = 'firebrick',
+               "finish"= 'limegreen',
+               "start" = 'yellow3',
+               "obst"  = 'forestgreen',
+               "1"     = 'green',
+               "0"     = '#00000000', #alpha of 0
+               "-1"    = 'red',
+               "-2"    = 'yellow4',
+               run_colours)
+  
+  base_field <- generate_field(colours,lines=lines)
+  
+  
+  blank_points <- rbind( #expand the frame slightly
+    c(-1.1,-1.1),
+    c( 1.1, 1.1)) |> as.data.frame()
+  
+  field_obst <- generate_obstacles(game_obj$obstacles, colours[4]) 
+  field <- base_field+field_obst +geom_point(
+    data=blank_points,
+    aes(x=V1,y=V2),                    
+    alpha=0,size=0.01)
+  
+  
+  
+  #dev.new(noRStudioGD = TRUE)
+  
+  # as to not create an excessive amount of layers,
+  # the entire dataset is plotted each time
+  
+  plotted_field <- field + geom_point( #plot all runs as one layer
+    data=game_obj$data,
+    mapping=aes(x=X_1,y=X_2,fill=Run,colour=State),
+    shape=21,
+    size=1,
+    stroke=1,
+    show.legend = FALSE
+  )
+  plot(plotted_field)
+}
 
-run_batch <- function(runs = 10){
+
+# wrapper which simply outputs scores 
+run_batch <- function(theta, drones = 10, obst,
+                      plot=TRUE){   # plotting slows down the process
   
-  npars <- 57
-  #initial theta
-  theta <- runif(npars,-1,1)
-  
-  #initial model
+  #theta -> NN function
   model <- create_IterativeNN(theta)
   
-  #GA happens here { } outputs fitted theta / model
-  
-  #evaluate for last time for `runs` times
-  game_out <- run_game(fitted_model$func)
-  
+  game_out <- run_game(model$func, drones=drones, obst=obst)
+  if(plot){
+    plot_game(game_out)
+  }
   return(score=sum(game_out$scores))
 }
 
-#runs
-r <- 10
 
-score <- run_batch(runs=r)
+# -----------------------RUNNING GAMES WITH GA---------------------------------
 
-run_colours <- viridisLite::viridis(n=r,
-                                    alpha=0.7,begin=0.2,end=0.8,option="B")
-names(run_colours)<-c(1:r+1)
+# --- --- --- --- how to run games --- --- --- ---
+# score <- run_batch(theta.init, 
+#                     drones=d, 
+#                     obst=obst) #only returns total score
+# 
+# 
+# game_out <- run_game(iterative_func = create_IterativeNN(theta.init)$func,
+#                      drones=d,
+#                      obst=obst) #returns model object and scores
+# 
+# plot_game(game_obj = game_out)
 
-colours <- c("bound" = 'firebrick',
-             "finish"= 'limegreen',
-             "start" = 'yellow3',
-             "obst"  = 'forestgreen',
-             "1"     = 'green',
-             "0"     = '#00000000', #alpha of 0
-             "-1"    = 'red',
-             "-2"    = 'yellow4',
-             run_colours)
 
-base_field <- generate_field(colours)
+npars <- 57
 
-# set.seed(2)
+# random generation here
+theta.init <- runif(npars,-1,1)
 obst <- cbind(X_1  = runif(n_obst, obst_bounds[1,1],obst_bounds[2,1]),
               X_2  = runif(n_obst, obst_bounds[1,2],obst_bounds[2,2]),
               Size = rep(obst_size, n_obst))
+# end random generation
 
-blank_points <- rbind( #expand the frame slightly
-  c(-1.1,-1.1),
-  c( 1.1, 1.1)) |> as.data.frame()
-
-field_obst <- generate_obstacles(obst, colours[4]) 
-field <- base_field+field_obst +geom_point(
-  data=blank_points,
-  aes(x=V1,y=V2),                    
-  alpha=0,size=0.01)
+d <- 10
 
 
+# we must vary theta after each run based on GA
+obj<-run_batch(theta=theta.init,drones=d,obst=obst)
 
-#dev.new(noRStudioGD = TRUE)
+# custom monitor to print population to file
+print_monitor <- function(ga_model){
+  # print all populations to file, includes the iteration it was generated in
+  bind_cols(Pop_Iteration=ga_model@iter,as_tibble(ga_model@population)) |> 
+    write_csv(file=paste0("./population_generated/",now()),append=TRUE)
+}
 
-# as to not create an excessive amount of layers,
-# the entire dataset is plotted each time
 
-this_field <- field # clear previous layers
+GA <- ga(type = "real-valued",
+         fitness=run_batch,
+         drones=d,
+         obst=obst,
+         lower = rep(-10, npars), upper = rep(10, npars),
+         maxiter = iterlim,
+         monitor = print_monitor,
+         keepBest = TRUE)
+summary(GA)
 
-this_field <- field + geom_point( #plot all runs as one layer
-  data=game_out$data,
-  mapping=aes(x=X_1,y=X_2,fill=Run,colour=State),
-  shape=21,
-  size=1,
-  stroke=1,
-  show.legend = FALSE
-) +
-  labs(title=sprintf("Run = %d",run))
 
-plot(this_field)
-
-sum(game_out$scores)
-
-#create wrapper which outputs scores 

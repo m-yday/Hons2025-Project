@@ -187,6 +187,19 @@ Perhaps we could consider _unique_ function calls. This may be a better fit. GAs
 
 
 
+<Insert Image of GA Performance>
+
+Wow! Clearly GAs do a pretty fine job. In just 6 population steps we had already had at least one full set of 10 drones successfully completing the course. 
+Additionally, near the midpoint of this analysis, even the mean score of the drones is comfortably sitting at ~8. Noting that minimum score possible is -10, and maximum is 10, that means we consistently have 9/10 drones completing the course. 
+
+So why has this paper been attempting so hard to discredit GA? 
+
+Let's consider the things that these graphs are not showing.
+6 steps means 
+
+This took <xyz> seconds to run. 
+
+
 
 
 # Results

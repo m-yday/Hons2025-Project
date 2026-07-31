@@ -270,3 +270,6 @@ GA <- ga(type = "real-valued",
          maxiter = iterlim, 
          monitor = custom_ga_monitor)
 summary(GA)
+
+
+
