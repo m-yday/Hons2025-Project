@@ -57,7 +57,8 @@ obj.df <- function(X){
 }
 
 base_theme <- theme_minimal() +
-  theme(aspect.ratio=1,legend.position = 'bottom'
+  theme(aspect.ratio=1,legend.position = 'bottom', 
+        legend.text = element_text(angle = 15, hjust = 1)
         #panel.background = element_rect(fill='grey80')
   )
 theme_set(base_theme)
@@ -75,17 +76,28 @@ xseq <- seq(minmax[1],minmax[2],resolution) #symmetric.
 
 ################################################################################
 
-transform_val = "identity"
-breaks_val = c(1,10,100,1000,20000)
-
 #-#-# #-#-# #-#-# #-#-# #        TEST FUNCTION         # #-#-# #-#-# #-#-# #-#-#
 obj <- function(x){ 
   return(test_Ackley(x))
 }
 
-################################################################################
-#                        setup + optimisation functions                        #
+# settings for colour scales:
+# passed to scale_fill_viridis_c(), & eventually, continuous_scale()
 
+# linear: 
+transform_val <- "identity"
+breaks_val    <- waiver()
+
+# log:
+# transform_val <- "log1p"
+# breaks_val    <- c(1,10,100,1000,20000)
+
+################################################################################
+#                            optimisation functions                            #
+
+#                                setup surface
+
+# gg is the surface information of the objective function. 
 ggdata <- expand_grid(!!! rep(list(xseq),DIM),
                       .name_repair=~make.names(1:DIM))|>
   mutate(Y=pmap_vec(.l=pick(everything()),
@@ -96,28 +108,14 @@ p_obj <- ggplot()+
   geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
   scale_fill_viridis_c(option="E"
                        ,transform=transform_val,breaks=breaks_val
-                       )
+  )
 p_obj
-
-
-#next we follow the path of the optimisation function
-#set.seed(1)
-
-start <- runif(n=DIM,startbounds[1],startbounds[2])
-names(start)=names(ggdata)[1:DIM]
-as_tibble(t(start))
-
-opt_trace <- matrix(NA, nrow=iterlim, ncol=2*DIM+1,
-                    dimnames= list(NULL,
-                                   c('Iteration',
-                                     names(ggdata)[1:DIM],
-                                     paste0('Min',names(ggdata)[1:DIM]))
-                                   )
-                    )
 
 nu_global<-0.05
 
 # optimisation function options
+# these functions take in the current position (x), 
+# returning the next x value based on their algorithm.
 
 step_gradient_descent  <- function(x,nu=0.2){
   next_x <- x-nu*grad(obj,x,method="simple")
@@ -137,8 +135,12 @@ step_newton_raphson    <- function(x,nu=0.5){
   next_x <- x - nu*(solve(hessian(obj,x))) %*% (grad(obj,x))
   return(next_x)
 }
-step_genetic_algorithm <- function(){
+step_genetic_algorithm <- function(x){ # might need to rethink algorithm selection
   #real valued genetic algorithm
+  ga(type="real-valued",
+     fitness= obj,
+     
+     )
   
 }
 
@@ -149,7 +151,32 @@ update_opt <- function(x, min_x, nu=nu_global){
   step_gradient_descent(x)
 }
 
-#                      run optimisation, plot, and animate
+
+
+#-#-# #-#-# #-#-# #-#-# #       RUN OPTIMISATION       # #-#-# #-#-# #-#-# #-#-#
+
+run_optim <- function(x_0, names){
+  
+}
+
+
+#next we follow the path of the optimisation function
+#set.seed(1)
+
+start <- runif(n=DIM,startbounds[1],startbounds[2])
+names(start)=names(ggdata)[1:DIM]
+as_tibble(t(start))
+
+opt_trace <- matrix(NA, nrow=iterlim, ncol=2*DIM+1,
+                    dimnames= list(NULL,
+                                   c('Iteration',
+                                     names(ggdata)[1:DIM],
+                                     paste0('Min',names(ggdata)[1:DIM]))
+                    )
+)
+
+#                              run optimisation
+
 
 xi <- min_x <- start
 min_y <- obj(min_x)
@@ -170,6 +197,7 @@ for(i in 2:iterlim){
   
 }
 
+#                              plot and animate
 
 p_static <- p_obj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
@@ -201,3 +229,44 @@ p_anim
 #           filename="rand_search_n0.2.gif",
 #           path="../Render",
 #           animation=p_anim)
+
+
+# cannot train GA stepwise. The GA must be fitted first and then tested.
+
+#minimisation problem must be changed to maximisation problem
+ga_obj <- function(x){
+  -obj(x)
+}
+
+ga_model <- ga(type="real-valued",
+   fitness= ga_obj, 
+   lower = rep(minmax[1],length.out=DIM), #length of lower/upper must = DIM
+   upper = rep(minmax[2],length.out=DIM),
+   keepBest = TRUE,
+   monitor = plot
+)
+
+ga_model@population
+
+# now, GA doesn't give us every single value tested.
+# but it does give us the best value tested for each population iteration.
+
+# we define a monitoring function so we can attempt to note all populations generated.
+# let us do this with tidyverse
+custom_ga_monitor <- function(model) {
+  best <- which.max(model@fitness)
+  pop <- model@population |> as_tibble() |> bind_cols(Iteration=model@iter)
+  plot(p_obj+
+         geom_point(data=pop,aes(x=V1,y=V2,group=Iteration),
+                    colour="white",shape=4,alpha=0.2)+
+         labs(subtitle=paste("iteration =", model@iter))+
+         geom_point(data=pop[best,],aes(x=V1,y=V2,colour=Iteration))+
+         scale_colour_viridis_c(option="H",begin=0.3,end=0.9)
+    )
+}
+GA <- ga(type = "real-valued",
+         fitness = ga_obj,
+         lower = c(-5, -5), upper = c(5, 5), popSize = 10,
+         maxiter = iterlim, 
+         monitor = custom_ga_monitor)
+summary(GA)
