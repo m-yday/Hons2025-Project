@@ -8,6 +8,7 @@ obst_size <- 0.02 #r (radius) 2*r = square side length
  
 delta <- 0.05
 iterlim <- 100 #k
+GA_iterlim <- 100
 
 bounds <- matrix(c(-1,1,  #X_1
                    -1,1), #X_2
@@ -292,10 +293,56 @@ plot_game <- function(game_obj){
   plot(plotted_field)
 }
 
+# run and plot a game based on the theta values.
+plot_theta <- function(theta,d,obst){
+  
+  run_colours <- viridisLite::viridis(n=d,
+                                      alpha=0.7,begin=0.2,end=0.8,option="B")
+  names(run_colours)<-c(1:d+1)
+  
+  colours <- c("bound" = 'firebrick',
+               "finish"= 'limegreen',
+               "start" = 'yellow3',
+               "obst"  = 'forestgreen',
+               "1"     = 'green',
+               "0"     = '#00000000', #alpha of 0
+               "-1"    = 'red',
+               "-2"    = 'yellow4',
+               run_colours)
+  
+  base_field <- generate_field(colours,lines=lines)
+  
+  
+  blank_points <- rbind( #expand the frame slightly
+    c(-1.1,-1.1),
+    c( 1.1, 1.1)) |> as.data.frame()
+  
+  field_obst <- generate_obstacles(obst, colours[4]) 
+  field <- base_field+field_obst +geom_point(
+    data=blank_points,
+    aes(x=V1,y=V2),                    
+    alpha=0,size=0.01)
+  
+  # as to not create an excessive amount of layers,
+  # the entire dataset is plotted each time
+  
+  game_obj<-run_game(iterative_func=create_IterativeNN(theta),drones=d,obst)
+  
+  plotted_field <- field + geom_point(
+    data=game_obj$data,
+    mapping=aes(x=X_1,y=X_2,fill=Run,colour=State),
+    shape=21,
+    size=1,
+    stroke=1,
+    show.legend = FALSE
+  )
+  plot(plotted_field)
+}
+
 
 # wrapper which simply outputs scores 
 run_batch <- function(theta, drones = 10, obst,
-                      plot=TRUE){   # plotting slows down the process
+                      plot=FALSE){   # plotting slows down the process
   
   #theta -> NN function
   model <- create_IterativeNN(theta)
@@ -338,22 +385,53 @@ d <- 10
 # we must vary theta after each run based on GA
 obj<-run_batch(theta=theta.init,drones=d,obst=obst)
 
+NOW <- now() #snapshot to label file generated
+
 # custom monitor to print population to file
 print_monitor <- function(ga_model){
   # print all populations to file, includes the iteration it was generated in
   bind_cols(Pop_Iteration=ga_model@iter,as_tibble(ga_model@population)) |> 
-    write_csv(file=paste0("./population_generated/",now()),append=TRUE)
+    write_csv(file=paste0("./population_generated/",NOW,".csv"),append=TRUE)
+  print(paste("Population iteration:", ga_model@iter))
 }
-
-
 GA <- ga(type = "real-valued",
          fitness=run_batch,
          drones=d,
          obst=obst,
          lower = rep(-10, npars), upper = rep(10, npars),
-         maxiter = iterlim,
+         maxiter = GA_iterlim,
          monitor = print_monitor,
          keepBest = TRUE)
 summary(GA)
+
+fcalls <- read_csv(paste0("./population_generated/",NOW,".csv"),
+                     col_names=FALSE)
+
+n_fcalls <- fcalls |> count()
+distinct_fcalls <- fcalls |> distinct(pick(!X1),.keep_all = TRUE)
+n_distinct <- distinct_fcalls |> count()
+
+
+# ~ 81% distinct.
+prop_distinct <- n_distinct/n_fcalls
+
+ 
+duplicate_fcalls <- anti_join(fcalls,distinct_fcalls)
+n_duplicated <- duplicate_fcalls |> count() #issue here. TODO, figure out. Missing entries.
+# want to inspect for patterns in duplicated function calls.
+
+
+
+
+
+n_fcalls <- fcalls |> count()
+
+distinct_fcalls <- fcalls |> distinct(pick(!X1),.keep_all = TRUE)
+n_distinct <- distinct_fcalls |> count()
+
+duplicate_fcalls <- anti_join(fcalls,distinct_fcalls)
+n_duplicated <- duplicate_fcalls |> count() 
+
+n_duplicated + n_distinct
 
 

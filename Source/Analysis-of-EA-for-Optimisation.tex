@@ -204,7 +204,7 @@
 
 \title{Analysis of Evolutionary Algorithms for Optimisation}
 \author{Shvet Maharaj}
-\date{12 June 2026}
+\date{27 August 2026}
 \begin{document}
 \maketitle
 
@@ -382,28 +382,68 @@ A brief explanation of the updating procedure follows.
 
 \textbf{Fitness evaluation}
 
-Fitness for each of the `genotypes' (candidate solutions),
+Fitness for each of the candidate solutions (`genotypes'),
 \(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is an arbitrary
-index of the genotype in the generation \(k\). This is typically the
-objective function of interest, \(\op f{\cdot}\).
+index of the candidate solution in the generation \(k\). This is
+typically the objective function of interest, \(\op f{\cdot}\).
 
 \textbf{Selection}
 
-A subset of genotypes from the current generation's population becomes
-selected as a separate population known as the `reproducing population'
-Genotypes are selected (with replacement) through a weighted selection
-process, based typically proportionally on the fitness of each genotype,
-\(\op{f}{\theta_i^{\left(k\right)}}\), with probability
-\(p_i^{\left(k\right)}\).
+A subset of candidate solutions from the current generation's population
+becomes selected as a separate population known as the `reproducing
+population'. Solutions are selected (with replacement) through a
+weighted selection process, based typically proportionally on the
+fitness of each genotype, \(\op{f\!}{\theta_i^{\left(k\right)}}\), with
+probability \(p_i^{\left(k\right)}\).
 
 An elitist strategy can be used, which means that even if the best
-performers are unluckily not selected, they still make it to the next
-population. By default \texttt{gareal\_lsSelection} is used, which is
-proportional selection with fitness linear scaling.
+performers are unluckily not selected, an amount of them are still are
+pushed through to the next population. The default method for
+real-valued parameters is \texttt{gareal\_lsSelection}: proportional
+selection with fitness linear scaling.
 
 \begin{tcolorbox}[title=Selection with linear scaling: \texttt{gareal\_lsSelection()}]
-Algorithm explanation:
+Let $\B f$ contain the fitness values of each member in the current population.\\
+\\
+To ensure all fitness values are positive:
+$$
+\B f \leftarrow \begin{cases}
+\B f- \op{min}{\B f} & \text{if } \op{min}{\B f} < 0,\\
+\B f & \text{otherwise.}
+\end{cases}
+$$
+Then, $\B f$ is scaled as follows.\\
+\\
+Let the mid-range, $M=\frac{\op{min}{\B f} +\op{max}{\B f}}2$.
+
+$$
+\begin{aligned}
+\delta &=
+\begin{cases}
+\op{max}{\B f} - \bar f 
+& \text{if } \bar f > M,
+\\
+\bar f -\op{min}{\B f} 
+& \text{otherwise,}
+\\
+\end{cases}
+\\
+a&= 
+\frac{\bar f}{\delta} \\
+b&= 
+\frac{\bar f}{\delta}\left(\delta - \bar f\right) = \bar f(1-\frac{\bar f}{\delta})
+\end{aligned}
+$$
+$\B f' = a\B f + b$.\\
+\\
+Members of the population are then repeatedly sampled from, with probabilities proportional to their scaled fitness values, $\B f'$, where:
+$$ p_i = \frac{f'_i}{\sum_j^Nf'_j}.$$
+
 \end{tcolorbox}
+
+Note that this is not the exact algorithm as contained within Scrucca's
+GA package. I have taken the liberty to simplify and rearrange terms for
+clarity of analysis.
 
 \textbf{Crossover}
 
@@ -490,20 +530,89 @@ are accessible in
 
 \end{figure}%
 
+\paragraph{Measuring Performance}\label{measuring-performance}
+
+An interesting issue with drawing comparisons between GAs and
+optimisation procedures is the issue of fairly assessing the amount of
+function calls. We could simply compare the iteration number like we
+have with the other optimisation procedures. We would have to note how
+some procedures require more overhead for each function call, but until
+now, these overheads above the function call were not too excessive. Now
+with GAs, we have an entire population being assessed with each
+iteration. The GA package (Scrucca 2017) uses a default population size
+of 50, and throws a warning if the population size is less than 10.
+
+A solution to this is taking the product of the iteration number and
+population size to get a value of function calls completed by the
+process. This does seem to be the fairest assessment method. When
+attempting this, we might use the iteration limit of 100 that we have
+currently been using, and divide that by the population size being used.
+
+Whoops. Using the default value, we've reached our maximum amount of
+function calls in two population iterations.
+
+Clearly, we have not given GAs a fair chance to flex their muscles.
+There has barely been enough time for any of the `learning' that GAs are
+capable of to come through in a single step.
+
+So perhaps we try a more balanced value: 10 iterations of population
+size 10.
+
+Ah phooey. We now have the issue of rarer events like mutation
+\(\left(p=0.1\right)\) only occurring once on average per population
+step. Additionally, 10 population steps is still squeezing the algorithm
+quite a bit. This seems hardly fair. Random search will have trouble
+making any meaningful progress towards a solution if it was given 10
+iterations. Even gradient methods would have the issue of having
+suboptimal results with 10 iterations. Therefore, this is clearly not an
+issue that lands solely with direct search methods.
+
+Perhaps we could consider \emph{unique} function calls. This may be a
+better fit. GAs do have a tendency to repeatedly check the same values.
+Well-performing genes will survive to the next generation, to be tested
+again. Crossover does complicate this, but it should be clear that in
+principle, the probability of collisions is increased through this form
+of performance sampling. Though this does diminish quickly as the
+dimensions of the search increase.
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/GA_Performance.png}
+
+}
+
+\caption{`Drone game' performance of GA with population size 50 over 100
+population iterations.}
+
+\end{figure}%
+
+Wow! Clearly GAs do a pretty fine job. In just 2 population steps we had
+already had at least one full set of 10 drones successfully completing
+the course. Additionally by iteration 25, even the mean score of the
+drones is comfortably sitting at \textasciitilde8. Noting that minimum
+score possible is -10, and maximum is 10, that means we consistently
+have 9/10 drones completing the course.
+
+So why have I been so negative toward GA, when its performance looks so
+promising?
+
+Well, let's consider some things that these graphs are not showing. 2
+steps means between 51-100 function calls, the GA was able to eventually
+gain its first completely successful run. This is not completely bogus,
+it's a very fair result from a direct search algorithm. This is a
+comfortable position to be in relation to RS.
+
+This took approximately \(xyz\) seconds to run. In comparison, a local
+random search algorithm takes \(zyx\) seconds. This is a \(abc\)-fold
+increase over other methods. When we compare the performance of the RS
+training of the neural network, we find that:
+
+Even if we stop the training after 25 population iterations, that is
+still 1250 function calls.
+
 \section{Results}\label{results}
 
 \section{Conclusion}\label{conclusion}
-
-\subsection{Areas for extension}\label{areas-for-extension}
-
-Testing additional random search algorithms: - Luus--Jaakola (LJ) -
-Improving Hit-and-Run (IHR) - Simulated Annealing
-
-Testing against Travelling Salesman Problem (or problems where the
-search space grows rapidly)
-
-mention: metaheuristics converging iterative / single step / (what word
-was it) optimisation
 
 \newpage
 
