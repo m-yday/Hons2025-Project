@@ -6,6 +6,7 @@ author:
 date: last-modified
 date-format: "D MMMM YYYY"
 bibliography: references.bib
+csl: elsevier-with-titles.csl
 format:
   pdf:
     pdf-engine: pdflatex
@@ -14,6 +15,7 @@ format:
     toc-title: "Table of contents"
     lof: false
     lot: false
+    link-citations: true
     papersize: "a4"
     include-in-header: 
       - text: |
@@ -34,11 +36,9 @@ execute:
 
 # Introduction
 
-# Literature Review
-
 Optimisation can be thought of as a tool-selection problem. With different optimisation paradigms being the tools in your toolbox. A certain optimisation problem may be placed in front of you, the properties of which will inform which tools would suit the application. Each tool would have their unique set of tradeoffs --- you *could* use a sledgehammer to nail together a wooden frame, and using a ball-peen hammer to take down a wall is certainly... possible, though it clearly would be more exhausting to tackle each of those problems in such a way.
 
-With optimisation, 'No Free Lunch' theorems inform us that finding an optimisation strategy that is suited to a certain problem is how we gain benefits between different optimisation paradigms --- "any elevated
+With optimisation, 'No Free Lunch' (NFL) theorems inform us that finding an optimisation strategy that is suited to a certain problem is how we gain benefits between different optimisation paradigms --- "any elevated
 performance over one class of problems is offset by performance over another class" [@wolpert1997].
 
 It is typical that gradient methods perform better than function-value methods; with hessian methods performing even better. Although it is important to note that those methods do depend on being able to calculate or approximate gradients or hessians for the optimisation problem at hand.
@@ -48,6 +48,34 @@ For optimisation problems where hessians and gradients can be found, and where t
 For those cases where usage of either gradients or hessians are impossible or otherwise unfeasible, function-value (or direct) methods are available. While this flexibility in which optimisation problems they can be applied to is beneficial, function-value methods losing the information available from gradients or hessians would either have no effect or a detrimental effect on an algorithm's performance in optimisation. I.e., it would not be useful to use such a method when ones better suited to a problem exist. For this reason function-value methods like genetic algorithms are most informatively compared with fellow function-value methods.
 
 This paper will primarily discuss the difference between genetic algorithms and their closest competitors: derivative-free optimisation algorithms, or black-box methods.
+
+# Literature Review
+
+The early descriptions of GAs as popularised by Holland @holland1975 had parameters represented in bits, i.e., binary-coded GAs.
+
+The development of real-coded genetic algorithm (RCGA) came as a result of challenges the came with binary-coded genetic algorithms. Premature convergence [@kumar2025] [p. 2], [@chaudhary2026].
+
+RCGAs typically require a set of bounds over which to optimise (they are search algorithms). If we use an RS method, we can do much the same.
+
+Is there a genetic part of this?
+
+Asa day
+
+## No Free Lunch
+
+The NFL theorems might be taken to tell us that every algorithm is valuable, since any dip in performance in any set of problems, is countered by the performance an algorithm has in the complement of that set. While we might argue that the usefulness of all problems in the universal set is not equal -- that their applicability to real world problems is not uniformly weighted -- even if we accept this without scrutiny, we still have avenues to argue that indeed not all algorithms are equally valuable. 
+
+The NFL theorems necessitate that an algorithm does not return to previous points. 
+This might seem like it immediately disqualifies most methods -- or is practically infeasible -- but any algorithm can be made to meet this requirement. Simply by storing the inputs and outputs (fitness value) to every objective function (fitness function) call, we meet the requirements to apply NFL. If before we call the objective function, we search if that combination of inputs has already been evaluated, and only then call the objective function if it has not -- using the fitness value we previously stored in the case of a repeated call. This can ensure that we never evaluate the objective function at the same point more than once.
+Now this does add overhead, which may become significant, especially where objective function calls are cheap. But where objective function calls become complex and expensive, it is often worth the memory and processor usage.
+
+It should be easy to imagine an algorithm that could be considered especially ineffective. Though it is important to note that NFL theorems also seem to require that an algorithm is _capable_ of visiting all points, so our simplest ideas (some algorithm that repeatedly searches a single point or small set of points) for something ineffective will not actually fit. 
+We could find a fitting candidate for our ineffective algorithm if we imagine an algorithm that often repeats the points it has previously visited: perhaps as the amount of points it has visited increases, it finds itself more and more likely to repeat points instead of finding a new point. Perhaps it visits each order combination of previously visited points before searching a new point -- thus having $O(n!)$ complexity! 
+We can compare this to a related algorithm that skips the repeated evaluations and instead directly searches the exact same new points without these artificial inefficiencies. These two algorithms would now, having applied the aforementioned method to make any algorithm NFL theorem compatible, the exact same signature. The precisely same order of function evaluations. Yet clearly, these algorithms have nowhere near the same value, even if viewed as the same in NFL theorems. 
+Of course, this is not a fair argument against NFL. But with this extreme argument, it can be shown that there definitively is the ability for some algorithms to be better or worse to apply to the problem of optimisation.
+
+We now have an avenue of criticism for our algorithms: whether the overhead of our optimisation method renders it unproductive.
+
 
 # Methodology
 
@@ -123,6 +151,8 @@ A brief explanation of the updating procedure follows.
 
 Fitness for each of the candidate solutions ('genotypes'), $\theta_i^{\left(k\right)}$ is calculated, where $i$ is an arbitrary index of the candidate solution in the generation $k$. This is typically the objective function of interest, $\op f{\cdot}$.
 
+#### Genetic Operators
+
 ###### **Selection**
 
 A subset of candidate solutions from the current generation's population becomes selected as a separate population known as the 'reproducing population'. Solutions are selected (with replacement) through a weighted selection process, based typically proportionally on the fitness of each genotype, $\op{f\!}{\theta_i^{\left(k\right)}}$, with probability $p_i^{\left(k\right)}$.
@@ -163,7 +193,7 @@ b&=
 $$
 $\B f' = a\B f + b$.\\
 \\
-Members of the population are then repeatedly sampled from, with probabilities proportional to their scaled fitness values, $\B f'$, where:
+The probabilities for sampling with replacement are calculated from the scaled fitness values, $\B f'$, where:
 $$ p_i = \frac{f'_i}{\sum_j^Nf'_j}.$$
 
 \end{tcolorbox}
@@ -171,21 +201,172 @@ Note that this is not the exact algorithm as contained within Scrucca's GA packa
 
 ###### **Crossover**
 
-The core of a genetic algorithm, the crossover operation, brings a means to generate additional 'child' (next generation) genotypes through parts of the 'genetic information' (parameter values) from either of the 'parent' (current generation) genotypes. Alongside mutation, crossover applied on the reproducing population creates the new, next generation population. By default, `gareal_laCrossover` is used, which is local arithmetic crossover.
+The core of a genetic algorithm, the crossover operation, brings a means to generate 'child' (next generation) solutions through use of the 'genetic information' (parameter values) from either of the 'parent' (current generation) solutions. Alongside mutation, crossover applied on the reproducing population creates the new, next generation population. The default method for real-valued parameters is `gareal_laCrossover`: local arithmetic crossover.
+These functions take two 'parent' solutions and generate two 'child' solutions.
+
+Before any crossover algorithm is applied, a preprocessing step is done to pair solutions into 'mating' pairs.
+
+Where $N$ is the population size, and $n_p$ is the number of parents selected for crossover.
+$$
+\begin{aligned}
+n_p &= 2\lfloor \frac{N}2\rfloor ,
+\\
+\B\theta^k_1, \dots, \B\theta^k_{n_p}  &\in_R \Theta^k,
+\end{aligned}
+$$
+such that each candidate solution $\B\theta_i$ is selected uniformly randomly without replacement from $\Theta^k$, and organised into pairs for the crossover algorithm.
+
+After the selection phase, solutions from the population are randomly split into pairs. These will serve as the parents from which a pair of child solutions will be calculated.
+
+
 
 \begin{tcolorbox}[title=Local arithmetic crossover: \texttt{gareal\_laCrossover()}]
-Algorithm explanation:
+Where $\B a$ is a vector of standard uniform deviates.
+$$
+\begin{aligned}
+\B a &\sim \mathcal U\!\left(0,1\right)\\
+\B\theta_1^{k+1} &= \B a \circ \B\theta_1^k +\left(1-\B a\right)\circ\B\theta_2^k \\
+\B\theta_2^{k+1} &= \B a \circ \B\theta_2^k +\left(1-\B a\right)\circ\B\theta_1^k
+\end{aligned}
+$$
+A pair of child solutions, $\B\theta_1^{k+1}$, $\B\theta_2^{k+1}$, are calculated as weighted mean of the parents' parameter values. For each pair of parent solutions, $\B\theta^k_1$, $\B\theta^k_2$, the weighting, $\B a$, is a vector of size $p$ of random deviates from a standard uniform distribution. Each child is calculated as one of the combinations of parent solutions.\\
+
+This process is performed for each pair of parent candidate solutions.
 \end{tcolorbox}
+
+This is a simple crossover paradigm. While it is _the default_ method applied to real-coded parameters, we do not want to risk strawmanning GAs in this analysis. Since crossover sits at the core of a GA's ability to explore a parameter space, if a method of crossover is not able to do so well, it will easily kneecap the entire algorithm as a whole. 
+To account for this, we shall also take a look at the other real-coded crossover methods found in the GA package. 
+While not a comprehensive look at everything GAs have to offer, we are able to look at the convenient tools most analysts would be reaching for. This feels more appropriate to ensure meaningful results and discussion can come from this analysis. 
+
+Within the GA package, we see that the crossover methods are:
+\begin{itemize}
+  \item[{[default]}] \verb|gareal_laCrossover|: local arithmetic crossover,
+  \item[--] \verb|gareal_waCrossover|: whole arithmetic crossover,
+  \item[--] \verb|gareal_blxCrossover|: blend crossover,
+  \item[--] \verb|gareal_laplaceCrossover|: laplace crossover,
+  \item[{[missing]}]\verb|gareal_spCrossover|: single-point crossover,
+  \item[{[missing]}]\verb|gareal_uCrossover|: uniform crossover.
+\end{itemize}
+
+*There are two additional methods mentioned in @scrucca2013 which appear not to be present in the codebase.
+
+\begin{tcolorbox}[title=Whole arithmetic crossover: \texttt{gareal\_waCrossover()}]
+Similar to local arithmetic crossover, but where $a$ is a shared single value for all parameters rather than a vector of standard uniform values.
+
+$$
+\begin{aligned}
+a &\sim \mathcal U\!\left(0,1\right)\\
+\B\theta_1^{k+1} &= a \B\theta_1^k +\left(1-a\right)\B\theta_2^k \\
+\B\theta_2^{k+1} &= a \B\theta_2^k +\left(1-a\right)\B\theta_1^k
+\end{aligned}
+$$
+A pair of child solutions, $\B\theta_1^{k+1}$, $\B\theta_2^{k+1}$, are calculated as weighted mean of the parents' parameter values. For each pair of parent solutions, $\B\theta^k_1$, $\B\theta^k_2$, the weighting is random value, $a$, from a standard uniform distribution. Each child is calculated as one of the combinations of parent solutions.\\
+
+This process is performed for each pair of parent candidate solutions.
+\end{tcolorbox}
+
+\begin{tcolorbox}[title=Blend crossover: \texttt{gareal\_blxCrossover()}]
+With a blend parameter $a$ that defaults to $0.5$.
+\\
+
+For a pair of parent candidate solutions, $\B\theta_1$ and $\B\theta_2$, each with $p$ parameters, and for each pair of corresponding parameters, $\theta_{1j}$ and $\theta_{2j}$, within those candidate solutions, the following is applied.
+
+$$
+\begin{aligned}
+x_1 &= \op\min{\theta_{1j}, \theta_{2j}}, \\
+x_2 &= \op\max{\theta_{1j}, \theta_{2j}}, \\
+\\
+b_j &= x_1 - a\left(x_2-x_1\right), \\
+c_j &= x_2 + a\left(x_2-x_1\right), \\
+\\
+b_j &\leftarrow 
+\begin{cases}
+b_j &\text{if } b_j>\text{min}_j,\\
+\text{min}_j &\text{otherwise},
+\end{cases}\\
+c_j &\leftarrow 
+\begin{cases}
+c_j &\text{if } c_j<\text{max}_j,\\
+\text{max}_j &\text{otherwise},
+\end{cases} \\
+\\
+u_1,u_2 &\sim \mathcal U \!\left(b_j,c_j\right),\\
+\theta_{1j} &\leftarrow u_1,\\
+\theta_{2j} &\leftarrow u_2,\\
+\end{aligned}
+$$
+for all $j$ in $\left\{1, \dots, p\right\}$.\\
+
+This process is performed for each pair of parent candidate solutions.
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[title=Laplace crossover: \texttt{gareal\_laplaceCrossover()}]
+Scrucca references @deep2009 for the recommendation of $a=0$ and $b=0.15$ for the location and scale parameters to be used with the Laplace distribution for the case of real-coded genetic algorithms.
+
+These are the default values for this method, though overwritable when called.
+
+$$
+\begin{aligned}
+r_j,u_j &\sim \op{\mathcal U}{0,1},\\
+\beta_j &= \begin{cases}
+a+b\log\left(u_j\right) & \text{if } r_j > 0.5, \\
+a-b\log\left(u_j\right) & \text{otherwise},
+\end{cases}\\
+\\
+s_j &= \beta_j \lvert \theta_{1j} - \theta_{2j} \rvert, \\
+\\
+t_{1j} &= \theta_{1j} + s_j,\\
+t_{2j} &= \theta_{2j} + s_j, \\
+\\
+\theta_{1j} &\leftarrow 
+\begin{cases}
+\min_j & \text{if } t_{1j} \leq \min_j,\\
+t_{1j} & \text{if } \min_j < t_{1j} < \max_j,\\
+\max_j & \text{otherwise},\\
+\end{cases}\\
+\theta_{2j} &\leftarrow
+\begin{cases}
+\min_j & \text{if } t_{2j} \leq \min_j,\\
+t_{2j} & \text{if } \min_j < t_{2j} < \max_j,\\
+\max_j & \text{otherwise},\\
+\end{cases}
+\end{aligned}
+$$
+for all $j$ in $\left\{1, \dots, p\right\}$.\\
+
+This process is performed for each pair of parent candidate solutions.
+\end{tcolorbox}
+
+Notably, Laplace crossover is the only method which does not have the issue of its child parameter value being constrained to the range given by its parent values.
+
+It is clear that nearly regardless of the method chosen for crossover, the outcome is quite similar. The parameter value of the child will be limited in scope to the values given by the parents. This necessarily means that diversity in the solution space will gradually dwindle as the algorithm progresses. This lack of diversity will ensure the algorithm is less and further less able to better the fitness value as the population homogenises, due to not being able to effectively explore the solution space.
+
+To combat this --- other than avoiding the use of crossover methods with are not the Laplace method provided --- we can allow for mutation to help disturb our settling into any part of the solution space, and allow us to increase diversity.
+
+Essentially regularisation! We are turning the mutation operators into random search!
+
+Population staging
+
+
 
 ###### **Mutation**
 
 The randomly shifting of the values of 'genes' (parameters) within genotypes. The probability of mutation can be set by the user. Alongside crossover, mutation applied on the reproducing population creates the new, next generation population. By default, `gareal_raMutation` is used, which is uniform random mutation.
 
 \begin{tcolorbox}[title=Uniform random mutation: \texttt{gareal\_raMutation()}]
-Algorithm explanation:
+Generates a uniform random deviate for one randomly selected parameter value, constrained on the bounds for that specific parameter.\\
+\\
+The new mutated value is completely unaffected by whatever value the original parameter held.
+
+$$\theta_j \in_R \B \theta$$
+$$x\sim \mathcal U \! \left( \text{min}_j, \text{max}_j \right)$$
+$$\B \theta _j \leftarrow x$$
 \end{tcolorbox}
 
-Crossover and mutation operations increase diversity in a population, allowing us to explore more of the sample space (exploration), while selection operations decrease diversity in favour of increased fitness (exploitation).
+Crossover and mutation operations intend to increase diversity in a population, allowing us to explore more of the sample space (exploration), while selection operations decrease diversity in favour of increased fitness (exploitation).
+
+
 
 ## Analysis
 
@@ -261,3 +442,6 @@ Show probability of collisions with GAs (crossover) -->
 \newpage
 
 # Bibliography
+
+::: {#refs}
+:::
