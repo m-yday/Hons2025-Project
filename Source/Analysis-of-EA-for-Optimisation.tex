@@ -10,7 +10,7 @@
   numbers=noendperiod]{scrartcl}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
-\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\setcounter{secnumdepth}{3}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -192,7 +192,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
 \hypersetup{
-  pdftitle={Analysis of Evolutionary Algorithms for Optimisation},
+  pdftitle={Are real-coded genetic algorithms more than a metaphor?},
   pdfauthor={Shvet Maharaj},
   colorlinks=true,
   linkcolor={blue},
@@ -202,84 +202,132 @@
   pdfcreator={LaTeX via pandoc}}
 
 
-\title{Analysis of Evolutionary Algorithms for Optimisation}
+\title{Are real-coded genetic algorithms more than a metaphor?}
 \author{Shvet Maharaj}
-\date{19 September 2026}
+\date{14 October 2026}
 \begin{document}
 \maketitle
 
-\renewcommand*\contentsname{Table of contents}
+\renewcommand*\contentsname{Contents}
 {
 \setcounter{tocdepth}{4}
 \tableofcontents
 }
 
 \tcbset{enhanced}
-
 \newpage
 
 \section{Introduction}\label{introduction}
 
-Optimisation can be thought of as a tool-selection problem. With
-different optimisation paradigms being the tools in your toolbox. A
-certain optimisation problem may be placed in front of you, the
-properties of which will inform which tools would suit the application.
-Each tool would have their unique set of tradeoffs --- you \emph{could}
-use a sledgehammer to nail together a wooden frame, and using a
-ball-peen hammer to take down a wall is certainly\ldots{} possible,
-though it clearly would be more exhausting to tackle each of those
-problems in such a way.
+Optimisation can be thought of as a tool-selection problem -- with
+different optimisation paradigms being the tools in your toolbox. When
+dealing with a certain optimisation problem, the properties of the
+problem will inform which tools would perform best on it. Each tool
+would have their unique set of tradeoffs -- you \emph{could} use a
+sledgehammer to nail together a wooden frame, and using a ball-peen
+hammer to take down a wall is certainly\ldots{} possible, though it
+clearly would be more exhausting to tackle each of those problems in
+such a way.
 
-With optimisation, `No Free Lunch' theorems inform us that finding an
-optimisation strategy that is suited to a certain problem is how we gain
-benefits between different optimisation paradigms --- ``any elevated
-performance over one class of problems is offset by performance over
-another class'' {[}\citeproc{ref-wolpert1997}{1}{]}.
+When discussing optimisation algorithms (henceforth, ``optimisers''),
+`No Free Lunch' (NFL) theorems inform us that finding an optimiser that
+is \emph{suited} to a certain problem is how we realise the benefits of
+different optimisers: ``any elevated performance over one class of
+problems is offset by performance over another class''
+(\citeproc{ref-wolpert1997}{Wolpert and Macready 1997}). Though, how
+would a poorly designed tool compare to a well-made one? How could such
+a thing fit into our broader NFL environment? Clearly a paper teaspoon
+would not be part of our greater toolbox of optimisers. We will explore
+how to evaluate inefficiencies or redundancy despite an understanding of
+NFL theorems.
 
-It is typical that gradient methods perform better than function-value
-methods; with hessian methods performing even better. Although it is
-important to note that those methods do depend on being able to
-calculate or approximate gradients or hessians for the optimisation
-problem at hand.
-
-For optimisation problems where hessians and gradients can be found, and
-where they are \emph{useful} to optimisation algorithms (as opposed to
-being unstable to calculate, deceptive/misleading, or otherwise
-non-informative), the use of algorithms which can take advantage of them
-would be \emph{expected} to be superior.
+Regarding optimisers, it is typical that those which make use of
+gradients perform better than those which use the problem's function
+value directly -- with methods making use of hessian information
+outperforming even those. Though it is important to note the limitations
+that both hessian and gradient methods (we can call these `derivative'
+methods) do depend on being able to calculate or approximate gradients
+or hessians for the optimisation problem at hand. It can also be noted
+that direct optimisers can have advantages over derivative methods. For
+optimisation problems where hessians and gradients can be found, there
+exists the possibility of them being harmful to an optimiser. These
+could be unstable to calculate, deceptive/misleading, or otherwise
+non-informative to an optimiser. Where this is not the case though, use
+of algorithms which can take advantage of gradients or hessians would be
+\emph{expected} to be superior.
 
 For those cases where usage of either gradients or hessians are
-impossible or otherwise unfeasible, function-value (or direct) methods
-are available. While this flexibility in which optimisation problems
-they can be applied to is beneficial, function-value methods losing the
-information available from gradients or hessians would either have no
-effect or a detrimental effect on an algorithm's performance in
-optimisation. I.e., it would not be useful to use such a method when
-ones better suited to a problem exist. For this reason function-value
-methods like genetic algorithms are most informatively compared with
-fellow function-value methods.
+impossible or otherwise infeasible, direct methods are available. While
+this flexibility in which problems this type of optimiser can be applied
+to is beneficial, direct methods losing the information available from
+gradients or hessians would either have no effect or even a detrimental
+effect on an algorithm's performance in optimisation. It would not be
+useful to use such a method when ones better suited to a problem exist.
+For this reason direct methods like the genetic algorithm are most
+informatively compared with fellow direct methods. Therefore, this paper
+will primarily discuss the difference between genetic algorithms and
+their closest competitors: derivative-free optimisers, also known as
+black-box (or direct) methods.
 
-This paper will primarily discuss the difference between genetic
-algorithms and their closest competitors: derivative-free optimisation
-algorithms, or black-box methods.
+The genetic algorithm (GA) is a pioneering algorithm in the space of
+nature-inspired optimisers---algorithms which look at processes in our
+natural world, and hope to capture what these natural processes can
+accomplish in the language of mathematics. It evokes incredibly powerful
+imagery, with Darwin's theory of natural selection, as well as our
+broader understanding of genetics. In fact, at first glance, the typical
+binary-coded genetic algorithm could easily be used as a standin for
+actual genetic code! If we pair off each `digit' in our encoding, we
+could have a quaternary system that could represent the C, G, A, and T
+nucleobases of DNA directly. While quite exciting, the comparisons do
+end soon though, since genetic encodings do not typically go as far to
+replicate the double stranded nature of DNA, nor the fact that
+nucleobases must bind to each other in specific pairings (C \& G, and A
+\& T). It could be argued that GAs are instead replicating genetic
+information being stored in RNA rather than DNA. While it is theorised
+that this method of storing life's genetic information in RNA is
+possible and could perhaps have been the origins of life, no direct
+evidence of this remains, and the natural world as we know it does not
+itself function in such a manner.
 
 \section{Literature Review}\label{literature-review}
 
 The early descriptions of GAs as popularised by Holland
-{[}\citeproc{ref-holland1975}{2}{]} had parameters represented in bits,
+(\citeproc{ref-holland1975}{1975}) had parameters represented in bits,
 i.e., binary-coded GAs.
 
-The development of real-coded genetic algorithm (RCGA) came as a result
-of challenges the came with binary-coded genetic algorithms. Premature
-convergence {[}\citeproc{ref-kumar2025}{3}{]} {[}p.~2{]},
-{[}\citeproc{ref-chaudhary2026}{4}{]}.
+The development of the real-coded genetic algorithm (RCGA) came as a
+result of challenges that came with binary-coded genetic algorithms.
 
-RCGAs typically require a set of bounds over which to optimise (they are
-search algorithms). If we use an RS method, we can do much the same.
+RCGAs typically require a set of bounds -- upper and lower bounds which
+we sample within (etcetc) -- over which to optimise (they are search
+algorithms). If we use an random search (RS) method, we can do much the
+same.
 
-Is there a genetic part of this?
+Eventually came GA's application to multiobjective optimisation, since
+issues with constraint satisfaction had been remedied, and GAs showed a
+promising ability to take to high-dimensional problems.
 
-Asa day
+By the end of the 20th century, GA had already become viewed as a
+powerful tool for both discrete and continuous optimisation.
+
+Currently much focus has been placed on `hybrid' algorithms. Algorithms
+which do not solely use GA: adding other algorithms to capture the
+global exploration benefits GA might offer, but with local search
+capabilities of other algorithms (\citeproc{ref-chaudhary2026}{Chaudhary
+et al. 2026}).
+
+The forefront of RCGA development has been on finding and designing
+crossover \& mutation methods which lend themselves to performing well
+with the continuous nature of the parameters.
+
+How much can we change an algorithm before it ceases to be what it
+promised to be? The changes in these algorithms could now place them in
+a significantly different sphere than originally.
+
+We will look into some of the simpler crossover and mutation methods
+later in this paper. Comparison to the newer adaptive methods of
+crossover and mutation will show that GAs have become something entirely
+different to what the metaphors had once started with.
 
 The NFL theorems might be taken to tell us that every algorithm is
 valuable, since any dip in performance in any set of problems, is
@@ -326,16 +374,25 @@ algorithms have nowhere near the same value, even if viewed as the same
 in NFL theorems. Of course, this is not a fair argument against NFL. But
 with this extreme argument, it can be shown that there definitively is
 the ability for some algorithms to be better or worse to apply to the
-problem of optimisation.
+problem of optimisation. Certainly, there exists No Free Lunch, but
+there certainly \emph{can} exist an overpriced lunch.
 
 We now have an avenue of criticism for our algorithms: whether the
 overhead of our optimisation method renders it unproductive.
 
-\section{Methodology}\label{methodology}
+Considering the scepticism into nature-inspired methods in the last
+decade, it is only natural to scrutinise one of the foremost pillars in
+nature-inspired methods with the same inspecting light that newer
+methods have been cast in. While the influx of nature-inspired methods
+has been cause for concern for the entire field of metaheuristics
+(\citeproc{ref-aranha2021}{Aranha et al. 2021}), the RCGA has been left
+mostly unscathed. Let us explore how much of that is due to their
+inherent performance, and how much may be due to their proximity to the
+performance GAs more broadly.
 
-\subsection{Design}\label{design}
+\section{Design}\label{design}
 
-\subsubsection{Update procedures}\label{update-procedures}
+\subsection{Update procedures}\label{update-procedures}
 
 Where noted, a \emph{strictly improving update procedure} will be used
 alongside the updating equations, defined as:
@@ -353,42 +410,42 @@ deterministic algorithms better. The best solution at point \(k\),
 \(\B x_k\), is stored separately as a vector -- never accessed by the
 algorithm.
 
-\subsubsection{Updating equations}\label{updating-equations}
+\subsection{Updating equations}\label{updating-equations}
 
 At the core of this exploration of genetic algorithms and other methods
 for optimisation, are the \emph{updating equations}. These define how
 each optimisation paradigm attempts to iteratively improve a candidate
 solution, \(\B v\).
 
-\paragraph{Hessian methods}\label{hessian-methods}
+\subsubsection{Hessian methods}\label{hessian-methods}
 
 Methods which utilise exact or approximate hessians.
 
-\subparagraph{Newton-Raphson}\label{newton-raphson}
+\paragraph{Newton-Raphson}\label{newton-raphson}
 
 Calculates the hessian.
 \[\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}\]
 
-\paragraph{Gradient methods}\label{gradient-methods}
+\subsubsection{Gradient methods}\label{gradient-methods}
 
 Methods which utlise exact or approximate gradients.
 
-\subparagraph{Gradient descent}\label{gradient-descent}
+\paragraph{Gradient descent}\label{gradient-descent}
 
 \[\B v_{k+1} = \B v_k -\nu \nabla f\left( \B v_k \right),\] where
 \(\nu\) is the learning rate.
 
-\paragraph{Function value methods}\label{function-value-methods}
+\subsubsection{Direct search methods}\label{direct-search-methods}
 
-Also known as Direct Search, Pattern Search, or Black-Box Methods. These
-algorithms do not make use of gradient nor of hessian information. This
-makes them far easier to apply to any context.
+Also known as pattern search or black-box methods. These algorithms do
+not make use of gradient nor of hessian information. This makes them far
+easier to apply to any context.
 
-\subparagraph{Random search (RS)}\label{random-search-rs}
+\paragraph{Random search (RS)}\label{random-search-rs}
 
 The specific version of the random search algorithm is informed by the
-descriptions given in {[}\citeproc{ref-zabinsky2011}{5}{]}. Algorithms
-are described by being `global' or `local'.
+descriptions given in Zabinsky (\citeproc{ref-zabinsky2011}{2011}).
+Algorithms are described by being `global' or `local'.
 
 \textbf{Pure Random Search (PRS)} repeatedly performs a global search
 with a simply improving update procedure.
@@ -404,18 +461,21 @@ major benefit of this is PRS is `embarrassingly parallelisable'. This is
 the only optimisation algorithm that will have this property in this
 paper.
 
-We test also an additional variant of RS, where the global search is
-either performed solely for the starting point), \(\B x_0\), or skipped
-entirely in favour of a user-defined starting point. Subsequent points
-are generated locally from the hypersphere (referred to as the
+We also test an additional variant of RS, where a global search is
+performed solely for the starting point, \(\B x_0\), or skipped entirely
+in favour of a user-defined starting point. Subsequent points are
+generated locally from the hypersphere (referred to as the
 `\(\left(N-1\right)\)-sphere', or `surface of the \(N\)-ball') around
 \(\B x_k\).
 
 This is Rastrigin's \textbf{Fixed Step Size Random Search
-(FSSRS)}{[}\citeproc{ref-rastrigin1963}{6}{]}.
+(FSSRS)}(\citeproc{ref-rastrigin1963}{Rastrigin 1963}). Rastrigin is
+also credited with coining the term `random search', though the name
+FSSRS is a term given by others to distinguish this original form of RS
+from other optimisers.
 
 An efficient way to sample uniformly from the surface of an \(N\)-ball
-is given by {[}\citeproc{ref-marsaglia1972}{7}{]}.
+is given by Marsaglia (\citeproc{ref-marsaglia1972}{1972}).
 
 \[\B v_{k+1} = \B x_k +h \B u.\]
 
@@ -426,7 +486,8 @@ standard normal distribution such that,
 \(\B z \sim \mathcal{N}_N\left(0,1\right),\) and where \(h\) is a step
 size hyperparameter.
 
-\subparagraph{Genetic algorithms}\label{genetic-algorithms}
+\section{Genetic algorithms: the GA
+package}\label{genetic-algorithms-the-ga-package}
 
 Genetic algorithms are a subset of evolutionary algorithms, typified by
 the use of three genetic operators: two-parent \textbf{crossover},
@@ -442,20 +503,21 @@ requiring multiple candidates for each iteration. Our previous notation
 referencing a single candidate per iteration is thus no longer feasible.
 
 We are implementing genetic algorithms using the \texttt{GA} package, as
-described in {[}\citeproc{ref-scrucca2013}{8}{]}.
+described in Scrucca (\citeproc{ref-scrucca2013}{2013}).
 
 A brief explanation of the updating procedure follows.
 
-\textbf{Fitness evaluation}
+\subsection{\texorpdfstring{\textbf{Fitness
+evaluation}}{Fitness evaluation}}\label{fitness-evaluation}
 
 Fitness for each of the candidate solutions (`genotypes'),
 \(\theta_i^{\left(k\right)}\) is calculated, where \(i\) is an arbitrary
 index of the candidate solution in the generation \(k\). This is
 typically the objective function of interest, \(\op f{\cdot}\).
 
-\paragraph{Genetic Operators}\label{genetic-operators}
+\subsection{Genetic Operators}\label{genetic-operators}
 
-\textbf{Selection}
+\subsubsection{\texorpdfstring{\textbf{Selection}}{Selection}}\label{selection}
 
 A subset of candidate solutions from the current generation's population
 becomes selected as a separate population known as the `reproducing
@@ -513,7 +575,7 @@ Note that this is not the exact algorithm as contained within Scrucca's
 GA package. I have taken the liberty to simplify and rearrange terms for
 clarity of analysis.
 
-\textbf{Crossover}
+\subsubsection{\texorpdfstring{\textbf{Crossover}}{Crossover}}\label{crossover}
 
 The core of a genetic algorithm, the crossover operation, brings a means
 to generate `child' (next generation) solutions through use of the
@@ -580,9 +642,9 @@ Within the GA package, we see that the crossover methods are:
   \item[{[missing]}]\verb|gareal_uCrossover|: uniform crossover.
 \end{itemize}
 
-*There are two additional methods mentioned in
-{[}\citeproc{ref-scrucca2013}{8}{]} which appear not to be present in
-the codebase.
+*There are two additional methods mentioned in Scrucca
+(\citeproc{ref-scrucca2013}{2013}) which appear not to be present in the
+codebase.
 
 \begin{tcolorbox}[title=Whole arithmetic crossover: \texttt{gareal\_waCrossover()}]
 Similar to local arithmetic crossover, but where $a$ is a shared single value for all parameters rather than a vector of standard uniform values.
@@ -684,17 +746,17 @@ is less and further less able to better the fitness value as the
 population homogenises, due to not being able to effectively explore the
 solution space.
 
-To combat this --- other than avoiding the use of crossover methods with
-are not the Laplace method provided --- we can allow for mutation to
-help disturb our settling into any part of the solution space, and allow
-us to increase diversity.
+To combat this -- other than avoiding the use of crossover methods with
+are not the Laplace method provided -- we can allow for mutation to help
+disturb our settling into any part of the solution space, and allow us
+to increase diversity.
 
 Essentially regularisation! We are turning the mutation operators into
 random search!
 
 Population staging
 
-\textbf{Mutation}
+\subsubsection{\texorpdfstring{\textbf{Mutation}}{Mutation}}\label{mutation}
 
 The randomly shifting of the values of `genes' (parameters) within
 genotypes. The probability of mutation can be set by the user. Alongside
@@ -717,61 +779,139 @@ population, allowing us to explore more of the sample space
 (exploration), while selection operations decrease diversity in favour
 of increased fitness (exploitation).
 
-\subsection{Analysis}\label{analysis}
+\section{Methodology}\label{methodology}
 
-Traces of each algorithm for 100 iterations on a 2-dimensional parabolic
-test surface.
+\section{Arbitrary Objectives: a Drone
+Game!}\label{arbitrary-objectives-a-drone-game}
 
-Coloured dots show the progression of the best point found by each
-algorithm.
+Parameters -\textgreater{} 5,5-Neural network -\textgreater{} trained
+with GA -\textgreater{} Drone Game
 
-White crosses show each point checked by the algorithm.
+\section{Analysis}\label{analysis}
 
-Note that these traces are intended to be viewed as an animation. These
-are accessible in
+We will now look at the behaviour of each optimiser by looking at the
+traces they leave when tested for 100 steps on a 2-dimensional parabolic
+test surface. This is a very basic test surface, but it will help us
+orient ourselves with a basic understanding of each of these optimisers'
+typical behaviour patterns. Additionally, above the traces, a line graph
+of the performance over the iterations for each optimiser is shown for
+simpler comparison.
+
+The coloured dots show the progression of the best point found by each
+optimiser. White crosses show each function evaluation by the optimiser.
+These will often be obscured by the coloured dots, unless the optimiser
+fails to better the optimal location in a step by large enough margin to
+be visible.
+
+The following traces are also viewable as an animation! These are
+accessible in
 \href{https://github.com/m-yday/Hons2025-Project}{the Github repository for this project}.
 
-\begin{figure}[H]
+To give a point of comparison, we'll also take a look at the behaviour
+of the Newton-Raphson \& gradient descent optimisers.
 
-{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/newt_n0.5.png}
+\begin{figure}
 
-}
+\centering{
 
-\caption{Newton-Raphson with nu=0.5.}
-
-\end{figure}%
-
-\begin{figure}[H]
-
-{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/gradient_desc_n0.2.png}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/newt-raph-all.pdf}
 
 }
 
-\caption{Gradient descent with nu=0.2.}
+\caption{\label{fig-newt-raph}Newton-Raphson with nu=0.5.}
 
 \end{figure}%
 
-\begin{figure}[H]
+\begin{figure}
 
-{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/pure_rs.png}
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/grad-desc-all.pdf}
 
 }
 
-\caption{Pure random search.}
+\caption{\label{fig-grad-desc}Gradient descent with nu=0.2.}
 
 \end{figure}%
 
-\begin{figure}[H]
+Our hessian- and gradient-based optimisers have both performed extremely
+well, as expected! Their traces are quite indistinguishable from one
+another. Without any penalisation values, \(\nu\), Newton-Raphson did
+outperform gradient descent by reaching the centre in just a few steps.
+But after choosing penalisation values for each optimiser, as shown
+above in Figure~\ref{fig-newt-raph} and Figure~\ref{fig-grad-desc}, we
+end up with very similar results. Both methods move directly towards the
+minimum point at \(\left(0, 0\right)\) immediately, their step sizes
+decreasing as the slope decreases. This is of course a problem extremely
+well-suited to such hessian- and gradient-based methods.
 
-{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/rand_search_n0.2.png}
+\begin{figure}
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/pure-rs-all.pdf}
 
 }
 
-\caption{Fixed step size random search with nu=0.2.}
+\caption{\label{fig-pure-rs}Pure random search.}
 
 \end{figure}%
 
-\paragraph{Measuring Performance}\label{measuring-performance}
+Figure~\ref{fig-pure-rs} showcases just how lucky PRS can really be. The
+performance plot shows a curve quite reminiscent of that from the
+Newton-Raphson and gradient descent optimisers. Though the reality is
+that this performance was simply lucky. PRS could easily have found its
+best performing solution at iteration 45, or 86, or 93. Paying close
+attention, the best candidate solution was found on approximately the
+18th iteration of the algorithm. While that sounds very optimistic, it
+also means the algorithm had run for approximately 82 iterations with no
+improvement. The fact that it got so lucky on the 18th iteration would
+not be something you could rely on over multiple runs, or multiple
+different problems. This issue only gets worse as a problem's dimensions
+increase. While PRS does have a uniform probability to reach any point
+in the search space, and does not have the issue of getting `stuck' in
+local optima, there is no guarantee of improvement as the algorithm
+runs. Improvements in this algorithm are proportional to the performance
+of the best point currently found: Let the comprehensive set of possible
+solutions in the search space be \(U\). We can collect all possible
+solutions which perform better than the best solution found by the
+optimiser at iteration \(k\), \(x_k\), into a set, \(S\). and \(S\)
+takes up 5\% of \(U\) then there is only a probability of 5\% that the
+candidate solution \(v_{k+1}\) has better performance than \(x_k\).
+
+This can help us identify another place where performance of PRS might
+suffer or improve. Even certain properties of PRS. The distribution of
+performance for the possible solutions in a specific problem changes, so
+too does the effectiveness of optimisers like PRS. Since PRS is
+uniformly able to select any point in the solution space, we
+theoretically could `rank' all possible points by their performance.
+This would let us obtain for any problem a curve of the performance
+values by percentile. And knowing how improvement is proportional to the
+(complement of the) performance percentile of a problem, we could take
+an expected value or confidence interval for what percentile we could
+expect to receive after \(k\) iterations.
+
+\textless-talk about clustering?-\textgreater{}
+
+If the 80th percentile of performance does about as well as the 20th,
+that ranking improvement, which encompasses 60\% of the entire
+population, is meaningless if that 60\% improvement takes too many
+additional iterations.
+
+\begin{figure}
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rand-sear-all.pdf}
+
+}
+
+\caption{\label{fig-rand-sear}Fixed step size random search with
+nu=0.2.}
+
+\end{figure}%
+
+\subsection{Measuring Performance}\label{measuring-performance}
 
 An interesting issue with drawing comparisons between GAs and
 optimisation procedures is the issue of fairly assessing the amount of
@@ -816,14 +956,16 @@ principle, the probability of collisions is increased through this form
 of performance sampling. Though this does diminish quickly as the
 dimensions of the search increase.
 
-\begin{figure}[H]
+\begin{figure}
 
-{\centering \includegraphics[width=4.16667in,height=\textheight,keepaspectratio]{../Render/GA_Performance.png}
+\centering{
+
+\includegraphics[width=100mm,height=\textheight,keepaspectratio]{../Render/GA_Performance.png}
 
 }
 
-\caption{`Drone game' performance of GA with population size 50 over 100
-population iterations.}
+\caption{\label{fig-ga-perf}`Drone game' performance of GA with
+population size 50 over 100 population iterations.}
 
 \end{figure}%
 
@@ -860,57 +1002,50 @@ still 1250 function calls.
 \section{Bibliography}\label{bibliography}
 
 \protect\phantomsection\label{refs}
-\begin{CSLReferences}{0}{0}
-\bibitem[\citeproctext]{ref-wolpert1997}
-\CSLLeftMargin{{[}1{]} }%
-\CSLRightInline{D.H. Wolpert, W.G. Macready, No free lunch theorems for
-optimization, IEEE Transactions on Evolutionary Computation 1 (1997)
-67--82.
-https://doi.org/\href{https://doi.org/10.1109/4235.585893}{10.1109/4235.585893}.}
-
-\bibitem[\citeproctext]{ref-holland1975}
-\CSLLeftMargin{{[}2{]} }%
-\CSLRightInline{J.H. Holland, {Adaptation in Natural and Artificial
-Systems}, (1975).
-https://doi.org/\href{https://doi.org/10.7551/mitpress/1090.001.0001}{10.7551/mitpress/1090.001.0001}.}
-
-\bibitem[\citeproctext]{ref-kumar2025}
-\CSLLeftMargin{{[}3{]} }%
-\CSLRightInline{Y. Kumar, K. Deep, State-of-the-art on ensemble of real
-coded genetic algorithm operators, Expert Systems 42 (2025) e70123.
-https://doi.org/\url{https://doi.org/10.1111/exsy.70123}.}
+\begin{CSLReferences}{1}{1}
+\bibitem[\citeproctext]{ref-aranha2021}
+Aranha, Claus, Christian Camacho, Felipe Campelo, et al. 2021.
+{``Metaphor-Based Metaheuristics, a Call for Action: The Elephant in the
+Room.''} \emph{Swarm Intelligence} 16 (November).
+\url{https://doi.org/10.1007/s11721-021-00202-9}.
 
 \bibitem[\citeproctext]{ref-chaudhary2026}
-\CSLLeftMargin{{[}4{]} }%
-\CSLRightInline{R. Chaudhary, P. Verma, R. Salgotra, A.H. Gandomi, Five
-decades of genetic algorithms: A systematic and bibliometric review
-(1975--2025), Archives of Computational Methods in Engineering (2026).
-https://doi.org/\href{https://doi.org/10.1007/s11831-025-10487-2}{10.1007/s11831-025-10487-2}.}
+Chaudhary, Reshu, Pooja Verma, Rohit Salgotra, and Amir H. Gandomi.
+2026. {``Five Decades of Genetic Algorithms: A Systematic and
+Bibliometric Review (1975--2025).''} \emph{Archives of Computational
+Methods in Engineering}, ahead of print.
+\url{https://doi.org/10.1007/s11831-025-10487-2}.
 
-\bibitem[\citeproctext]{ref-zabinsky2011}
-\CSLLeftMargin{{[}5{]} }%
-\CSLRightInline{Z.B. Zabinsky, Random search algorithms, Wiley
-Encyclopedia of Operations Research and Management Science (2011).
-https://doi.org/\href{https://doi.org/10.1002/9780470400531.eorms0704}{10.1002/9780470400531.eorms0704}.}
-
-\bibitem[\citeproctext]{ref-rastrigin1963}
-\CSLLeftMargin{{[}6{]} }%
-\CSLRightInline{L.A. Rastrigin, The convergence of the random search
-method in the extremal control of a many parameter system, Automaton \&
-Remote Control 24 (1963) 1337--1342.
-\url{https://cir.nii.ac.jp/crid/1573950398967802624}.}
+\bibitem[\citeproctext]{ref-holland1975}
+Holland, John H. 1975. \emph{{Adaptation in Natural and Artificial
+Systems}}. University of Michigan Press.
+\url{https://doi.org/10.7551/mitpress/1090.001.0001}.
 
 \bibitem[\citeproctext]{ref-marsaglia1972}
-\CSLLeftMargin{{[}7{]} }%
-\CSLRightInline{G. Marsaglia, Choosing a point from the surface of a
-sphere, The Annals of Mathematical Statistics 43 (1972) 645--646.
-https://doi.org/\href{https://doi.org/10.1214/aoms/1177692644}{10.1214/aoms/1177692644}.}
+Marsaglia, George. 1972. {``Choosing a Point from the Surface of a
+Sphere.''} \emph{The Annals of Mathematical Statistics} 43 (2): 645--46.
+\url{https://doi.org/10.1214/aoms/1177692644}.
+
+\bibitem[\citeproctext]{ref-rastrigin1963}
+Rastrigin, L. A. 1963. {``The Convergence of the Random Search Method in
+the Extremal Control of a Many Parameter System.''} \emph{Automaton \&
+Remote Control} 24: 1337--42.
+\url{https://cir.nii.ac.jp/crid/1573950398967802624}.
 
 \bibitem[\citeproctext]{ref-scrucca2013}
-\CSLLeftMargin{{[}8{]} }%
-\CSLRightInline{L. Scrucca, {\textbf{GA}}: A package for genetic
-algorithms in{\emph{R}}, Journal of Statistical Software 53 (2013).
-https://doi.org/\href{https://doi.org/10.18637/jss.v053.i04}{10.18637/jss.v053.i04}.}
+Scrucca, Luca. 2013. {``{\textbf{GA}}: A Package for Genetic Algorithms
+in{\emph{R}}.''} \emph{Journal of Statistical Software} 53 (4).
+\url{https://doi.org/10.18637/jss.v053.i04}.
+
+\bibitem[\citeproctext]{ref-wolpert1997}
+Wolpert, D. H., and W. G. Macready. 1997. {``No Free Lunch Theorems for
+Optimization.''} \emph{IEEE Transactions on Evolutionary Computation} 1
+(1): 67--82. \url{https://doi.org/10.1109/4235.585893}.
+
+\bibitem[\citeproctext]{ref-zabinsky2011}
+Zabinsky, Zelda B. 2011. {``Random Search Algorithms.''} \emph{Wiley
+Encyclopedia of Operations Research and Management Science}, ahead of
+print, January. \url{https://doi.org/10.1002/9780470400531.eorms0704}.
 
 \end{CSLReferences}
 
