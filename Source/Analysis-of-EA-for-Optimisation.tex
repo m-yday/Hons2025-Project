@@ -204,7 +204,7 @@
 
 \title{Are real-coded genetic algorithms more than a metaphor?}
 \author{Shvet Maharaj}
-\date{25 October 2026}
+\date{26 October 2026}
 \begin{document}
 \maketitle
 
@@ -225,28 +225,28 @@ dealing with a certain optimisation problem, the properties of the
 problem will inform which tools would perform best on it. Each tool
 would have their unique set of tradeoffs. Indeed, careful consideration
 of the tradeoffs, over time have led to strong association between
-particular optimisation routines and statistical model classes. E.g.,
-gradient descent for neural networks (backpropagation), iterative
-weighted least squares for generalised linear models, and \ldots{} add
-one more example '\,'
+particular optimisation routines and statistical model classes, such as
+gradient descent being associated with backpropagation with neural
+networks; iteratively reweighted least squares for generalised linear
+models; and the A* algorithm for shortest-path graph traversal.
 
 For optimisation algorithms (henceforth, ``optimisers''), it is typical
 that those which make use of gradients perform better than those which
 use the problem's function value directly -- with methods making use of
-hessian information outperforming even those. Though it is important to
-note the limitations that both hessian and gradient routines (we can
+Hessian information outperforming even those. Though it is important to
+note the limitations that both Hessian and gradient routines (we can
 call these `derivative' routines) do depend on being able to calculate
-or approximate gradients or hessians for the optimisation problem at
+or approximate gradients or Hessians for the optimisation problem at
 hand. It can also be noted that direct optimisers can have advantages
-over derivative routines. For optimisation problems where hessians and
+over derivative routines. For optimisation problems where Hessians and
 gradients can be found, there exists the possibility of them being
 harmful to an optimiser. These could be unstable to calculate,
 deceptive/misleading, or otherwise non-informative to an optimiser.
 Where this is not the case though, use of algorithms which can take
-advantage of gradients or hessians would be \emph{expected} to be
+advantage of gradients or Hessians would be \emph{expected} to be
 superior.
 
-For those cases where usage of either gradients or hessians are
+For those cases where usage of either gradients or Hessians are
 impossible or otherwise infeasible, direct routines are what remain
 available. This ability to forego derivative calculations is of
 \emph{major} benefit. For non-differentiable objectives, derivative-free
@@ -286,10 +286,9 @@ i.e., binary-coded GAs.
 The development of the real-coded genetic algorithm (RCGA) came as a
 result of challenges that came with binary-coded genetic algorithms.
 
-RCGAs typically require a set of bounds -- upper and lower bounds which
-we sample within (etcetc) -- over which to optimise (they are search
-algorithms). If we use an random search (RS) method, we can do much the
-same.
+RCGAs typically require a set of bounds -- upper and lower bounds -- for
+each variable over which to optimise. If we use an random search (RS)
+method, we can do much the same.
 
 Eventually came GA's application to multiobjective optimisation, since
 issues with constraint satisfaction had been remedied, and GAs showed a
@@ -407,16 +406,16 @@ solution, \(\B v\).
 
 \subsubsection{Hessian methods}\label{hessian-methods}
 
-Methods which utilise exact or approximate hessians.
+Methods which utilise exact or approximate Hessians.
 
 \paragraph{Newton-Raphson}\label{newton-raphson}
 
-Calculates the hessian.
+Calculates the Hessian.
 \[\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\left(\B v_k\right)}\]
 
 \subsubsection{Gradient methods}\label{gradient-methods}
 
-Methods which utlise exact or approximate gradients.
+Methods which utilise exact or approximate gradients.
 
 \paragraph{Gradient descent}\label{gradient-descent}
 
@@ -426,7 +425,7 @@ Methods which utlise exact or approximate gradients.
 \subsubsection{Direct search methods}\label{direct-search-methods}
 
 Also known as pattern search or black-box methods. These algorithms do
-not make use of gradient nor of hessian information. This makes them far
+not make use of gradient nor of Hessian information. This makes them far
 easier to apply to any context.
 
 \paragraph{Random search (RS)}\label{random-search-rs}
@@ -769,6 +768,11 @@ of increased fitness (exploitation).
 
 \section{Methodology}\label{methodology}
 
+Each trial was conducted by setting the same seed prior to running: 111.
+
+For GA, since it typically maximises, we take the negative of the
+objective function.
+
 \section{Arbitrary Objectives: a Drone
 Game!}\label{arbitrary-objectives-a-drone-game}
 
@@ -829,7 +833,7 @@ parabolic test surface with nu=0.2.}
 
 \end{figure}%
 
-Our hessian- and gradient-based optimisers have both performed extremely
+Our Hessian- and gradient-based optimisers have both performed extremely
 well, as expected! Their traces are quite indistinguishable from one
 another. With a learning rate parameter, \(\nu = 1\), Newton-Raphson did
 outperform gradient descent by reaching the centre in just a few steps.
@@ -839,7 +843,7 @@ Figure~\ref{fig-grad-desc}, we end up with very similar results. Both
 methods move directly towards the minimum point at \(\left(0, 0\right)\)
 immediately, with the size of each step decreasing as the slope
 decreases. This is of course a problem extremely well-suited to such
-hessian- and gradient-based methods.
+Hessian- and gradient-based methods.
 
 \begin{figure}[H]
 
@@ -908,12 +912,24 @@ optimiser on a parabolic test surface with nu=0.2.}
 
 \end{figure}%
 
-\subsection{Unimodal, flat optimum:
-Rosenbrock}\label{unimodal-flat-optimum-rosenbrock}
+\subsection{Unimodal: Rosenbrock}\label{unimodal-rosenbrock}
 
-\textless-Explain test function. -\textgreater{}
+\begin{figure}[H]
 
-\textless-Comparisons.-\textgreater{}
+\centering{
+
+\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen.pdf}
+
+}
+
+\caption{\label{fig-rosen}The Rosenbrock test surface.}
+
+\end{figure}%
+
+The Rosenbrock function is a non-convex, unimodal test surface. The
+global minimum of this test surface lies in a thin, curved `valley'.
+While it is easy to find this valley, it is challenging to find the true
+minimum since the valley itself is nearly completely flat.
 
 \begin{figure}[H]
 
@@ -967,7 +983,37 @@ a Rosenbrock test surface with nu=0.2.}
 
 \end{figure}%
 
-\subsection{Measuring Performance}\label{measuring-performance}
+\subsection{Multimodal:
+Styblinksi-Tang}\label{multimodal-styblinksi-tang}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang.pdf}
+
+}
+
+\caption{\label{fig-rosen}The Styblinksi-Tang test surface.}
+
+\end{figure}%
+
+The Styblinksi-Tang function is a m
+
+\subsection{Extremely Multimodal:
+Rastrigin}\label{extremely-multimodal-rastrigin}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rastrigin.pdf}
+
+}
+
+\caption{\label{fig-rosen}The Rastrigin test surface.}
+
+\end{figure}%
 
 An interesting issue with drawing comparisons between GAs and
 optimisation procedures is the issue of fairly assessing the amount of

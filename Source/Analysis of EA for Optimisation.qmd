@@ -52,7 +52,7 @@ The early descriptions of GAs as popularised by @holland1975 had parameters repr
 
 The development of the real-coded genetic algorithm (RCGA) came as a result of challenges that came with binary-coded genetic algorithms.
 
-RCGAs typically require a set of bounds -- upper and lower bounds which we sample within (etcetc) -- over which to optimise (they are search algorithms). If we use an random search (RS) method, we can do much the same.
+RCGAs typically require a set of bounds -- upper and lower bounds -- for each variable over which to optimise. If we use an random search (RS) method, we can do much the same.
 
 Eventually came GA's application to multiobjective optimisation, since issues with constraint satisfaction had been remedied, and GAs showed a promising ability to take to high-dimensional problems.
 
@@ -104,7 +104,7 @@ Calculates the Hessian. $$\B x_{k+1} = \B v_k -\frac{f'\left(\B v_k\right)}{f''\
 
 ### Gradient methods
 
-Methods which utlise exact or approximate gradients.
+Methods which utilise exact or approximate gradients.
 
 #### Gradient descent
 
@@ -371,7 +371,7 @@ Crossover and mutation operations intend to increase diversity in a population, 
 
 # Methodology
 
-Each trial was conducted by setting the same seed prior to running: 111. 
+The trials in this paper were conducted using R. The session info 
 
 For GA, since it typically maximises, we take the negative of the objective function. 
 
@@ -411,10 +411,11 @@ If the 80th percentile of performance does about as well as the 20th, that ranki
 
 ![The Fixed Step Size Random Search optimiser on a parabolic test surface with nu=0.2.](../Render/para-rand-sear.svg){#fig-rand-sear height="160mm" fig-pos='H'}
 
-## Unimodal, flat optimum: Rosenbrock
-<-Explain test function. ->
+## Unimodal: Rosenbrock
 
-<-Comparisons.->
+![The Rosenbrock test surface.](../Render/rosen.svg){#fig-rosen width="160mm" fig-pos='H'}
+
+The Rosenbrock function is a non-convex, unimodal test surface. The global minimum of this test surface lies in a thin, curved 'valley'. While it is easy to find this valley, it is challenging to find the true minimum since the valley itself is nearly completely flat. 
 
 ![The Newton-Raphson optimiser on a Rosenbrock test surface with nu=0.5.](../Render/rosen-newt-raph.svg){#fig-rosen-newt-raph height="160mm" fig-pos='H'}
 
@@ -425,7 +426,15 @@ If the 80th percentile of performance does about as well as the 20th, that ranki
 
 ![The Fixed Step Size Random Search on a Rosenbrock test surface with nu=0.2.](../Render/rosen-rand-sear.svg){#fig-rosen-rand-sear height="160mm" fig-pos='H'}
 
-## Measuring Performance
+## Multimodal: Styblinksi-Tang
+
+![The Styblinksi-Tang test surface.](../Render/styb-tang.svg){#fig-rosen width="160mm" fig-pos='H'}
+
+The Styblinksi-Tang function is a m
+
+## Extremely Multimodal: Rastrigin
+
+![The Rastrigin test surface.](../Render/rastrigin.svg){#fig-rosen width="160mm" fig-pos='H'}
 
 An interesting issue with drawing comparisons between GAs and optimisation procedures is the issue of fairly assessing the amount of function calls. We could simply compare the iteration number like we have with the other optimisation procedures. We would have to note how some procedures require more overhead for each function call, but until now, these overheads above the function call were not too excessive. Now with GAs, we have an entire population being assessed with each iteration. The GA package (Scrucca 2017) uses a default population size of 50, and throws a warning if the population size is less than 10. 
 

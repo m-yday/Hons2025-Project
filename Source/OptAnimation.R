@@ -1,11 +1,11 @@
 # HELLO! Welcome to this beautiful mess of a file!
 
 # All you need to adjust is:
-# the objective surface, OBJ: line 264
-# the update procedure, UP: line 268
-# and possibly the nu value, UP$nu: line 271
+# the objective surface, OBJ: line 271
+# the update procedure, UP: line 275
+# and possibly the nu value, UP$nu: line 278
 
-# presets are already set up to make this easier, see lines 141-205; 227-257.
+# presets are already set up to make this easier, see lines 250-264.
 ################################################################################
 #                        setup + objective functions                           #
 
@@ -15,16 +15,21 @@ library(gifski)
 library(GA)
 library(numDeriv)
 library(patchwork)
+#library(futureverse)
 
 # scalefactor: factor by which many values are scaled in order to accommodate larger features. (If a certain test surface creates features in -10:10, scalefactor <- 2 would be fitting, since the default is -5:5)
 scalefactor <- 1
-
 # bounds <- c(-5,5)*scalefactor
-DIM <- 2
-resolution <- 0.05*scalefactor
-
 # startbounds <- c(-5,-4)*scalefactor
+resolution <- 0.01 *scalefactor
+
+DIM <- 2
+
 iterlim <- 100
+trials <- 100
+
+# NU: LEARNING RATE
+nu_global<-0.05
 
 #                    objective function options (test surfaces)
 test_Rastrigin <- function(x){
@@ -70,9 +75,6 @@ test_Styblinski_Tang <- function (x){
 }
 
 
-# NU: LEARNING RATE
-nu_global<-0.05
-
 # optimisation function options
 # these functions take in the current position (x), 
 # returning the next x value based on their algorithm.
@@ -91,7 +93,7 @@ step_random_search     <- function(x,nu){
 }
 
 # nu unused in step_pure_rs
-step_pure_rs           <- function(x,nu=NA,bounds=minmax){
+step_pure_rs           <- function(x,nu=NA,bounds=c(-5,5)){
   next_x <- runif(n=DIM,bounds[1],bounds[2]) 
   return(next_x)
 }
@@ -100,15 +102,6 @@ step_newton_raphson    <- function(x,nu){
   next_x <- x - nu*(solve(hessian(OBJ$func,x))) %*% (grad(OBJ$func,x))
   return(next_x)
 }
-
-# step_genetic_algorithm <- function(x){ # might need to rethink algorithm selection
-#   #real valued genetic algorithm
-#   ga(type="real-valued",
-#      fitness= OBJ$func,
-#      
-#      )
-#   
-# }
 
 
 # Objective functions
@@ -144,7 +137,7 @@ obj_Rastrigin <- new_objective_surface(
   file_prefix = "rastrigin",
   min         = c(0,0),
   startbounds = c(-5,-4),
-  bounds      = c(-5,5),
+  bounds      = c(-5.12,5.12),
   transform   = "identity",
   breaks      = waiver()
 )
@@ -190,7 +183,7 @@ obj_Rosenbrock <- new_objective_surface(
   startbounds = c(-5,-4),
   bounds      = c(-5,5),
   transform   = "log1p",
-  breaks      = c(1,10,100,1000,10000,50000)
+  breaks      = c(1,10,100,1000,10000)
 )
 
 obj_Styblinski_Tang <- new_objective_surface(
@@ -198,7 +191,7 @@ obj_Styblinski_Tang <- new_objective_surface(
   plot_name   = "a Styblinski-Tang",
   file_prefix = "styb-tang",
   min         = c(-2.903534,-2.903534),
-  startbounds = c(5,4),
+  startbounds = c(4,5),
   bounds      = c(-5,5),
   transform   = "identity",
   breaks      = waiver()
@@ -256,6 +249,22 @@ up_pure_rs <- new_update_procedure(
   nu         = NULL
 )
 
+OBJECTIVE_SURFACES <- list(
+  obj_parabola,
+  obj_Ackley,
+  obj_Rastrigin,
+  obj_eggholder,
+  obj_Rosenbrock,
+  obj_Styblinski_Tang
+  )
+
+UPDATE_PROCEDURES <- list(
+  up_gradient_descent,
+  up_newton_raphson,
+  up_pure_rs,
+  up_random_search
+  )
+
 ################################################################################
 
 #-#-# #-#-# #-#-# #-#-# #        TEST FUNCTION         # #-#-# #-#-# #-#-# #-#-#
@@ -274,183 +283,394 @@ UP <- up_newton_raphson
 
 #                                setup surface
 
-minmax <- OBJ$bounds #this is done for pure_rs
-
-base_theme <- theme_minimal() 
-theme_set(base_theme)
-
-xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],resolution) #symmetric. 
-# geom_tile is based on the centre of the tile.
-
-# expand_grid for any amount of dimensions 
-# (warning! grows by length(xseq) exponentially!)
-# equivalent to: 
-# expand.grid(rep(list(xseq),DIM)) 
-# due to tidyr's different implementation of expand.grid
-# or:
-# expand_grid(xseq,xseq)   for DIM = 2
-
-# gg is the surface information of the objective function. 
-ggdata <- expand_grid(!!! rep(list(xseq),DIM),
-                      .name_repair=~make.names(1:DIM))|>
-  mutate(Y=pmap_vec(.l=pick(everything()),
-                    .f=~ OBJ$func(c(...))))
-
-#plot the objective surface
-p_obj <- ggplot()+
-  geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
-  geom_point(data=as_tibble(t(OBJ$min),
-                            .name_repair=~make.names(1:DIM)),
-             aes(x=X1,y=X2),
-             colour='red',shape=4,alpha=0.5)+
-  scale_fill_viridis_c(option="E",
-                       transform=OBJ$transform,breaks=OBJ$breaks
-  ) + coord_fixed()
-p_obj
+# minmax <- OBJ$bounds #this is done for pure_rs
+# 
+# base_theme <- theme_minimal()
+# theme_set(base_theme)
+# 
+# xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],resolution) #symmetric.
+# # geom_tile is based on the centre of the tile.
+# 
+# # expand_grid for any amount of dimensions
+# # (warning! grows by length(xseq) exponentially!)
+# # equivalent to:
+# # expand.grid(rep(list(xseq),DIM))
+# # due to tidyr's different implementation of expand.grid
+# # or:
+# # expand_grid(xseq,xseq)   for DIM = 2
+# 
+# # ggdata is the surface information of the objective function.
+# ggdata <- expand_grid(!!! rep(list(xseq),DIM),
+#                       .name_repair=~make.names(1:DIM))|>
+#   mutate(Y=pmap_vec(.l=pick(everything()),
+#                     .f=~ OBJ$func(c(...))))
+# 
+# #plot the objective surface
+# p_obj <- ggplot()+
+#   geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) +
+#   geom_contour(data=ggdata,aes(x=X1,y=X2,z=Y),breaks=OBJ$breaks,
+#                colour="white", linewidth = 0.2, alpha=0.8, linetype = 1)+
+#   geom_point(data=as_tibble(t(OBJ$min),
+#                             .name_repair=~make.names(1:DIM)),
+#              aes(x=X1,y=X2),
+#              colour='red',shape=4,alpha=0.8,show.legend = TRUE)+
+#   scale_fill_viridis_c(option="E",
+#                        transform=OBJ$transform,breaks=OBJ$breaks
+#   ) + coord_fixed() + xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01)
+# p_obj
 
 
 #-#-# #-#-# #-#-# #-#-# #          OPTIMISATION        # #-#-# #-#-# #-#-# #-#-#
+ 
+# generates test surface
+generate_surface <- function(OBJ,.resolution=resolution){
+  base_theme <- theme_minimal() 
+  theme_set(base_theme)
+  
+  xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],.resolution) #symmetric. 
+  # geom_tile is based on the centre of the tile.
+  
+  # ggdata is the surface information of the objective function. 
+  ggdata <- expand_grid(!!! rep(list(xseq),DIM),
+                        .name_repair=~make.names(1:DIM))|>
+    mutate(Y=pmap_vec(.l=pick(everything()),
+                      .f=~ OBJ$func(c(...))))
+  
+  #plot the objective surface
+  p_obj <- ggplot()+
+    geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
+    geom_contour(data=ggdata,aes(x=X1,y=X2,z=Y),breaks=OBJ$breaks,
+                 colour="white", linewidth = 0.2, alpha=0.8, linetype = 1)+
+    geom_point(data=as_tibble(t(OBJ$min),
+                              .name_repair=~make.names(1:DIM)),
+               aes(x=X1,y=X2),
+               colour='red',shape=4,alpha=0.8,show.legend = TRUE)+
+    scale_fill_viridis_c(option="E",
+                         transform=OBJ$transform,breaks=OBJ$breaks
+    ) + coord_fixed() + 
+    xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) # 1% expansion factor
+  
+  return(p_obj)
+}
 
-run_optim <- function(OBJ,UP,nu=NULL){
+# runs optimisation. generates plots.
+optim_main <- function(OBJ, UP, nu=NULL, trials=1,
+                      .iterlim=iterlim, .resolution=resolution){
+  
+  DIM <- 2
+  
   if(!is.null(nu)){
     UP$nu <- nu
   }
   
+  base_theme <- theme_minimal() 
+  theme_set(base_theme)
+  
+  xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],.resolution) #symmetric. 
+  # geom_tile is based on the centre of the tile.
+  
+  # ggdata is the surface information of the objective function. 
+  ggdata <- expand_grid(!!! rep(list(xseq),DIM),
+                        .name_repair=~make.names(1:DIM))|>
+    mutate(Y=pmap_vec(.l=pick(everything()),
+                      .f=~ OBJ$func(c(...))))
+  
+  #plot the objective surface
+  p_obj <- ggplot()+
+    geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
+    geom_contour(data=ggdata,aes(x=X1,y=X2,z=Y),breaks=OBJ$breaks,
+                 colour="white", linewidth = 0.2, alpha=0.8, linetype = 1)+
+    geom_point(data=as_tibble(t(OBJ$min),
+                              .name_repair=~make.names(1:DIM)),
+               aes(x=X1,y=X2),
+               colour='red',shape=4,alpha=0.8,show.legend = TRUE)+
+    scale_fill_viridis_c(option="E",
+                         transform=OBJ$transform,breaks=OBJ$breaks
+    ) + coord_fixed() + 
+    xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) # 1% expansion factor
+  
+  update_opt <- (
+    if (UP$use_min_x) 
+      function(x, min_x, nu=nu_global) UP$func(min_x,nu=UP$nu) 
+    else 
+      function(x, min_x, nu=nu_global) UP$func(x,    nu=UP$nu)
+  )
+  
+  start <- runif(n=DIM,OBJ$startbounds[1],OBJ$startbounds[2])
+  names(start)=names(ggdata)[1:DIM]
+  
+  opt_trace <- matrix(NA, nrow=.iterlim, ncol=7,
+                      dimnames= list(NULL,
+                                     c('Iteration',
+                                       names(ggdata),
+                                       paste0('Min',names(ggdata)))
+                      )
+  )
+  # opt_trace <- array(NA, #trace matrix extended for multiple runs
+  #                   dim = c(.iterlim,7,trials),
+  #                   dimnames = list(iteration = 1:.iterlim,
+  #                                   trace     = c("Iteration", "X1","X2","Y",
+  #                                                 "MinX1","MinX2","MinY"),
+  #                                   trial     = 1:trials))
+  
+  #                              run optimisation
+  
+  
+  xi <- min_x <- start
+  yi <- min_y <- OBJ$func(min_x)
+  
+  opt_trace[1,] <- c(1,xi,yi,min_x,min_y)
+  
+  #foreach(t = 1:trials) %dofuture%{
+  for(i in 2:.iterlim){
+    
+    xi <- update_opt(xi,min_x) 
+    yi <- OBJ$func(xi) #objective being minimised
+    
+    if(yi<min_y){
+      min_y <- yi
+      min_x <- xi
+    }
+    
+    opt_trace[i,] <- c(i,xi,yi,min_x,min_y) 
+    
+  }
+  #}
+  #                              plot and animate
+  
+  # trace_segments: how much of the trace is used in each facet
+  trace_segments <- 
+    bind_rows(bind_cols(opt_trace[c(1,1),],facet=1), 
+              #duplicated step 1 due to minimum count being 2.
+              bind_cols(opt_trace[1:2   ,],facet=2),
+              bind_cols(opt_trace[1:5   ,],facet=3),
+              bind_cols(opt_trace[1:10  ,],facet=4),
+              bind_cols(opt_trace[1:50  ,],facet=5),
+              bind_cols(opt_trace[1:100 ,],facet=6))
+  
+  facet_names <- c( `1` =   "1 Step",
+                    `2` =   "2 Steps",
+                    `3` =   "5 Steps",
+                    `4` =  "10 Steps",
+                    `5` =  "50 Steps",
+                    `6` = "100 Steps")
+  
+  p_static <- p_obj+
+    geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
+               colour='aquamarine',shape=4)+
+    geom_point(data=trace_segments,aes(x=X1,y=X2,group=Iteration),
+               colour="white",alpha=0.3,shape=4)+
+    geom_point(data=trace_segments,aes(x=MinX1,y=MinX2,colour=Iteration))+
+    scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+    facet_wrap(facets=~facet,nrow=2,
+               labeller = as_labeller(facet_names))
+  
+  p_performance <- ggplot(data=opt_trace, aes(x=Iteration)) +
+    geom_line(aes(y=Y), colour="grey")+
+    geom_line(aes(y=MinY, colour = Iteration),show.legend = FALSE)+
+    scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+    labs(y="Y", x="Iteration",
+         title= sprintf(
+           "Behaviour of the %s optimiser on %s surface.",
+           UP$plot_name, OBJ$plot_name))+ 
+    theme_bw() 
+  
+  p_full <- p_performance/p_static +
+    plot_layout(heights=unit(c(20,1),c('mm','null')))
+  
+  ggsave(plot=p_full,
+         filename = sprintf("../Render/%s-%s.svg",
+                            OBJ$file_prefix, UP$optim_name),
+         width=120, height=180, units="mm", dpi="retina")
+  
+  p_anim <-
+    animate(
+      p_obj+
+        geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
+                   colour='royalblue',shape=4)+
+        geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
+                   colour="white",shape=4)+
+        geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
+        scale_colour_viridis_c(option="H",begin=0.3,end=0.9)+
+        transition_states(states=Iteration,wrap=FALSE)+
+        shadow_wake(wake_length=0.3)+
+        labs(subtitle = "Iteration: {previous_state}.")
+      )
+  
+  anim_save(nframes= .iterlim,
+            filename=sprintf("%s-%s.gif", OBJ$file_prefix, UP$optim_name),
+            path="../Render",
+            animation=p_anim)
+  
+  return(opt_trace)
 }
 
-
-update_opt <- (
-  if (UP$use_min_x) 
-    function(x, min_x, nu=nu_global) UP$func(min_x,nu=UP$nu) 
-  else 
-    function(x, min_x, nu=nu_global) UP$func(x,    nu=UP$nu)
-  )
-
-#next we follow the path of the optimisation function
 set.seed(111)
 
-start <- runif(n=DIM,OBJ$startbounds[1],OBJ$startbounds[2])
-names(start)=names(ggdata)[1:DIM]
-#as_tibble(t(start)) # -4.41,-4.27
+p_Rosenbrock <- generate_surface(obj_Rosenbrock)
+p_Rosenbrock + labs(title="Rosenbrock test surface.")
+ggsave(filename = sprintf("../Render/%s.svg",obj_Rosenbrock$file_prefix),
+      width=120, units="mm", dpi="retina")
 
-# run_optim(start, )
+trace_rosen_gd  <- optim_main(OBJ=obj_Rosenbrock, UP=up_gradient_descent)
+trace_rosen_nr  <- optim_main(OBJ=obj_Rosenbrock, UP=up_newton_raphson)
+trace_rosen_prs <- optim_main(OBJ=obj_Rosenbrock, UP=up_pure_rs)
+trace_rosen_rs  <- optim_main(OBJ=obj_Rosenbrock, UP=up_random_search)
 
-opt_trace <- matrix(NA, nrow=iterlim, ncol=2*(DIM+1)+1,
-                    dimnames= list(NULL,
-                                   c('Iteration',
-                                     names(ggdata),
-                                     paste0('Min',names(ggdata)))
-                    )
-)
+p_Rastrigin <- generate_surface(obj_Rastrigin)
+p_Rastrigin + labs(title="Rastrigin test surface.")
+ggsave(filename = sprintf("../Render/%s.svg",obj_Rastrigin$file_prefix),
+       width=120, units="mm", dpi="retina")
 
-#                              run optimisation
+trace_rast_gd  <- optim_main(OBJ=obj_Rastrigin, UP=up_gradient_descent)
+trace_rast_nr  <- optim_main(OBJ=obj_Rastrigin, UP=up_newton_raphson)
+trace_rast_prs <- optim_main(OBJ=obj_Rastrigin, UP=up_pure_rs)
+trace_rast_rs  <- optim_main(OBJ=obj_Rastrigin, UP=up_random_search)
 
 
-xi <- min_x <- start
-yi <- min_y <- OBJ$func(min_x)
+p_Styblinksi_Tang <- generate_surface(obj_Styblinski_Tang)
+p_Styblinksi_Tang + labs(title="Styblinksi-Tang test surface.")
+ggsave(filename = sprintf("../Render/%s.svg",obj_Styblinski_Tang$file_prefix),
+       width=120, units="mm", dpi="retina")
 
-opt_trace[1,] <- c(1,xi,yi,min_x,min_y)
+trace_st_gd  <- optim_main(OBJ=obj_Styblinski_Tang, UP=up_gradient_descent)
+trace_st_nr  <- optim_main(OBJ=obj_Styblinski_Tang, UP=up_newton_raphson)
+trace_st_prs <- optim_main(OBJ=obj_Styblinski_Tang, UP=up_pure_rs)
+trace_st_rs  <- optim_main(OBJ=obj_Styblinski_Tang, UP=up_random_search)
 
-for(i in 2:iterlim){
-  
-  xi <- update_opt(xi,min_x) 
-  yi <- OBJ$func(xi) #objective being minimised
-  
-  if(yi<min_y){
-    min_y <- yi
-    min_x <- xi
-  }
-  
-  opt_trace[i,] <- c(i,xi,yi,min_x,min_y) 
-  
-}
 
-#                              plot and animate
+# update_opt <- (
+#   if (UP$use_min_x) 
+#     function(x, min_x, nu=nu_global) UP$func(min_x,nu=UP$nu) 
+#   else 
+#     function(x, min_x, nu=nu_global) UP$func(x,    nu=UP$nu)
+#   )
+# 
+# #next we follow the path of the optimisation function
+# 
+# 
+# start <- runif(n=DIM,OBJ$startbounds[1],OBJ$startbounds[2])
+# names(start)=names(ggdata)[1:DIM]
+# #as_tibble(t(start)) # -4.41,-4.27
+# 
+# 
+# opt_trace <- matrix(NA, nrow=iterlim, ncol=2*(DIM+1)+1,
+#                     dimnames= list(NULL,
+#                                    c('Iteration',
+#                                      names(ggdata),
+#                                      paste0('Min',names(ggdata)))
+#                     )
+# )
+# 
+# #                              run optimisation
+# 
+# 
+# xi <- min_x <- start
+# yi <- min_y <- OBJ$func(min_x)
+# 
+# opt_trace[1,] <- c(1,xi,yi,min_x,min_y)
+# 
+# for(i in 2:iterlim){
+#   
+#   xi <- update_opt(xi,min_x) 
+#   yi <- OBJ$func(xi) #objective being minimised
+#   
+#   if(yi<min_y){
+#     min_y <- yi
+#     min_x <- xi
+#   }
+#   
+#   opt_trace[i,] <- c(i,xi,yi,min_x,min_y) 
+#   
+# }
+# 
+# #                              plot and animate
+# 
+# # trace_segments: how much of the trace is used in each facet
+# trace_segments <- 
+#   bind_rows(bind_cols(opt_trace[c(1,1),],facet=1), 
+#             #duplicated step 1 due to minimum count being 2.
+#             bind_cols(opt_trace[1:2   ,],facet=2),
+#             bind_cols(opt_trace[1:5   ,],facet=3),
+#             bind_cols(opt_trace[1:10  ,],facet=4),
+#             bind_cols(opt_trace[1:50  ,],facet=5),
+#             bind_cols(opt_trace[1:100 ,],facet=6))
+# 
+# facet_names <- c( `1` =   "1 Step",
+#                   `2` =   "2 Steps",
+#                   `3` =   "5 Steps",
+#                   `4` =  "10 Steps",
+#                   `5` =  "50 Steps",
+#                   `6` = "100 Steps")
+# 
+# p_static <- p_obj+
+#   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
+#              colour='aquamarine',shape=4)+
+#   geom_point(data=trace_segments,aes(x=X1,y=X2,group=Iteration),
+#              colour="white",alpha=0.3,shape=4)+
+#   geom_point(data=trace_segments,aes(x=MinX1,y=MinX2,colour=Iteration))+
+#   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+#   facet_wrap(facets=~facet,nrow=3,
+#              labeller = as_labeller(facet_names))+ 
+#   xlim(minmax*1.01) + ylim(minmax*1.01) # 1% expansion factor
+# 
+# p_static
+# 
+# p_performance <- ggplot(data=opt_trace, aes(x=Iteration)) +
+#   geom_line(aes(y=Y), colour="grey")+
+#   geom_line(aes(y=MinY, colour = Iteration),show.legend = FALSE)+
+#   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+#   labs(y="Y", x="Iteration",
+#        title= sprintf(
+#          "Behaviour of the %s optimiser on %s surface.",
+#          UP$plot_name, OBJ$plot_name))+ 
+#   theme_bw() 
+# 
+# p_performance
+# 
+# p_full <- p_performance/p_static +
+#   plot_layout(heights=unit(c(20,1),c('mm','null')))
+# 
+#   
+# p_full
+# ggsave(plot=p_full,
+#        filename = sprintf("../Render/%s-%s-%%03d.svg",
+#                           OBJ$file_prefix, UP$optim_name),
+#        width=120, height=180, units="mm", dpi="retina")
+# 
+# p_anim <-
+# animate(
+#   p_obj+
+#   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
+#              colour='royalblue',shape=4)+
+#   geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
+#              colour="white",shape=4)+
+#   geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
+#   scale_colour_viridis_c(option="H",begin=0.3,end=0.9)+
+#   transition_states(states=Iteration,wrap=FALSE)+
+#   shadow_wake(wake_length=0.3)+
+#   labs(subtitle = "Iteration: {previous_state}.")  + xlim(minmax) + ylim(minmax)
+# )
+# 
+# p_anim
+# 
+# anim_save(nframes= iterlim,
+#           filename=sprintf("%s-%s.gif", OBJ$file_prefix, UP$optim_name),
+#           path="../Render",
+#           animation=p_anim)
 
-# trace_segments: how much of the trace is used in each facet
-trace_segments <- 
-  bind_rows(bind_cols(opt_trace[c(1,1),],facet=1), 
-            #duplicated step 1 due to minimum count being 2.
-            bind_cols(opt_trace[1:2   ,],facet=2),
-            bind_cols(opt_trace[1:5   ,],facet=3),
-            bind_cols(opt_trace[1:10  ,],facet=4),
-            bind_cols(opt_trace[1:50  ,],facet=5),
-            bind_cols(opt_trace[1:100 ,],facet=6))
 
-facet_names <- c( `1` =   "1 Step",
-                  `2` =   "2 Steps",
-                  `3` =   "5 Steps",
-                  `4` =  "10 Steps",
-                  `5` =  "50 Steps",
-                  `6` = "100 Steps")
 
-p_static <- p_obj+
-  geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
-             colour='aquamarine',shape=4)+
-  geom_point(data=trace_segments,aes(x=X1,y=X2,group=Iteration),
-             colour="white",alpha=0.3,shape=4)+
-  geom_point(data=trace_segments,aes(x=MinX1,y=MinX2,colour=Iteration))+
-  scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
-  facet_wrap(facets=~facet,nrow=3,
-             labeller = as_labeller(facet_names))+ 
-  xlim(minmax*1.01) + ylim(minmax*1.01) # 1% expansion factor
 
-p_static
 
-p_performance <- ggplot(data=opt_trace, aes(x=Iteration)) +
-  geom_line(aes(y=Y), colour="grey")+
-  geom_line(aes(y=MinY, colour = Iteration),show.legend = FALSE)+
-  scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
-  labs(y="Y", x="Iteration",
-       title= sprintf(
-         "Behaviour of the %s optimiser on %s surface.",
-         UP$plot_name, OBJ$plot_name))+ 
-  theme_bw() 
 
-p_performance
 
-p_full <- p_performance/p_static +
-  plot_layout(heights=unit(c(20,1),c('mm','null')))
 
-  
-p_full
-ggsave(plot=p_full,
-       filename = sprintf("../Render/%s-%s-%%03d.svg",
-                          OBJ$file_prefix, UP$optim_name),
-       width=120, height=180, units="mm", dpi="retina")
 
-p_anim <-
-animate(
-  p_obj+
-  geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
-             colour='royalblue',shape=4)+
-  geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
-             colour="white",shape=4)+
-  geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
-  scale_colour_viridis_c(option="H",begin=0.3,end=0.9)+
-  transition_states(states=Iteration,wrap=FALSE)+
-  shadow_wake(wake_length=0.3)+
-  labs(subtitle = "Iteration: {previous_state}.")  + xlim(minmax) + ylim(minmax)
-)
 
-p_anim
-
-anim_save(nframes= iterlim,
-          filename=sprintf("%s-%s.gif", OBJ$file_prefix, UP$optim_name),
-          path="../Render",
-          animation=p_anim)
 
 
 # cannot train GA stepwise. The GA must be fitted first and then tested.
-
-
-
-
-
-
-
-
-
 
 #minimisation problem must be changed to maximisation problem
 ga_obj <- function(x){
@@ -459,8 +679,8 @@ ga_obj <- function(x){
 
 ga_model <- ga(type="real-valued",
    fitness= ga_obj, 
-   lower = rep(minmax[1],length.out=DIM), #length of lower/upper must = DIM
-   upper = rep(minmax[2],length.out=DIM),
+   lower = rep(OBJ$bounds[1],length.out=DIM), #length of lower/upper must = DIM
+   upper = rep(OBJ$bounds[2],length.out=DIM),
    keepBest = TRUE,
    monitor = plot
 )
@@ -485,8 +705,10 @@ plot_monitor <- function(model) {
 }
 GA <- ga(type = "real-valued",
          fitness = ga_obj,
-         lower = c(-5, -5), upper = c(5, 5), popSize = 10,
-         maxiter = iterlim, 
+         lower = rep(OBJ$bounds[1],times=2), 
+         upper = rep(OBJ$bounds[2],times=2), 
+         popSize = 10,
+         maxiter = iterlim/5, 
          monitor = plot_monitor)
 summary(GA)
 
