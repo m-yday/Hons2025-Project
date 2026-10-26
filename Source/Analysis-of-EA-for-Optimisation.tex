@@ -204,7 +204,7 @@
 
 \title{Are real-coded genetic algorithms more than a metaphor?}
 \author{Shvet Maharaj}
-\date{14 October 2026}
+\date{25 October 2026}
 \begin{document}
 \maketitle
 
@@ -223,71 +223,59 @@ Optimisation can be thought of as a tool-selection problem -- with
 different optimisation paradigms being the tools in your toolbox. When
 dealing with a certain optimisation problem, the properties of the
 problem will inform which tools would perform best on it. Each tool
-would have their unique set of tradeoffs -- you \emph{could} use a
-sledgehammer to nail together a wooden frame, and using a ball-peen
-hammer to take down a wall is certainly\ldots{} possible, though it
-clearly would be more exhausting to tackle each of those problems in
-such a way.
+would have their unique set of tradeoffs. Indeed, careful consideration
+of the tradeoffs, over time have led to strong association between
+particular optimisation routines and statistical model classes. E.g.,
+gradient descent for neural networks (backpropagation), iterative
+weighted least squares for generalised linear models, and \ldots{} add
+one more example '\,'
 
-When discussing optimisation algorithms (henceforth, ``optimisers''),
-`No Free Lunch' (NFL) theorems inform us that finding an optimiser that
-is \emph{suited} to a certain problem is how we realise the benefits of
-different optimisers: ``any elevated performance over one class of
-problems is offset by performance over another class''
-(\citeproc{ref-wolpert1997}{Wolpert and Macready 1997}). Though, how
-would a poorly designed tool compare to a well-made one? How could such
-a thing fit into our broader NFL environment? Clearly a paper teaspoon
-would not be part of our greater toolbox of optimisers. We will explore
-how to evaluate inefficiencies or redundancy despite an understanding of
-NFL theorems.
-
-Regarding optimisers, it is typical that those which make use of
-gradients perform better than those which use the problem's function
-value directly -- with methods making use of hessian information
-outperforming even those. Though it is important to note the limitations
-that both hessian and gradient methods (we can call these `derivative'
-methods) do depend on being able to calculate or approximate gradients
-or hessians for the optimisation problem at hand. It can also be noted
-that direct optimisers can have advantages over derivative methods. For
-optimisation problems where hessians and gradients can be found, there
-exists the possibility of them being harmful to an optimiser. These
-could be unstable to calculate, deceptive/misleading, or otherwise
-non-informative to an optimiser. Where this is not the case though, use
-of algorithms which can take advantage of gradients or hessians would be
-\emph{expected} to be superior.
+For optimisation algorithms (henceforth, ``optimisers''), it is typical
+that those which make use of gradients perform better than those which
+use the problem's function value directly -- with methods making use of
+hessian information outperforming even those. Though it is important to
+note the limitations that both hessian and gradient routines (we can
+call these `derivative' routines) do depend on being able to calculate
+or approximate gradients or hessians for the optimisation problem at
+hand. It can also be noted that direct optimisers can have advantages
+over derivative routines. For optimisation problems where hessians and
+gradients can be found, there exists the possibility of them being
+harmful to an optimiser. These could be unstable to calculate,
+deceptive/misleading, or otherwise non-informative to an optimiser.
+Where this is not the case though, use of algorithms which can take
+advantage of gradients or hessians would be \emph{expected} to be
+superior.
 
 For those cases where usage of either gradients or hessians are
-impossible or otherwise infeasible, direct methods are available. While
-this flexibility in which problems this type of optimiser can be applied
-to is beneficial, direct methods losing the information available from
-gradients or hessians would either have no effect or even a detrimental
-effect on an algorithm's performance in optimisation. It would not be
-useful to use such a method when ones better suited to a problem exist.
-For this reason direct methods like the genetic algorithm are most
-informatively compared with fellow direct methods. Therefore, this paper
-will primarily discuss the difference between genetic algorithms and
-their closest competitors: derivative-free optimisers, also known as
-black-box (or direct) methods.
+impossible or otherwise infeasible, direct routines are what remain
+available. This ability to forego derivative calculations is of
+\emph{major} benefit. For non-differentiable objectives, derivative-free
+routines like the genetic algorithm are the only option -- and if we are
+to compare optimisers, GAs are most informatively compared with fellow
+direct routines. Therefore, this paper will primarily discuss the
+difference between genetic algorithms and their closest competitors:
+derivative-free optimisers, also known as black-box (or direct) methods.
 
-The genetic algorithm (GA) is a pioneering algorithm in the space of
-nature-inspired optimisers---algorithms which look at processes in our
-natural world, and hope to capture what these natural processes can
-accomplish in the language of mathematics. It evokes incredibly powerful
-imagery, with Darwin's theory of natural selection, as well as our
-broader understanding of genetics. In fact, at first glance, the typical
-binary-coded genetic algorithm could easily be used as a standin for
-actual genetic code! If we pair off each `digit' in our encoding, we
-could have a quaternary system that could represent the C, G, A, and T
-nucleobases of DNA directly. While quite exciting, the comparisons do
-end soon though, since genetic encodings do not typically go as far to
-replicate the double stranded nature of DNA, nor the fact that
-nucleobases must bind to each other in specific pairings (C \& G, and A
-\& T). It could be argued that GAs are instead replicating genetic
-information being stored in RNA rather than DNA. While it is theorised
-that this method of storing life's genetic information in RNA is
-possible and could perhaps have been the origins of life, no direct
-evidence of this remains, and the natural world as we know it does not
-itself function in such a manner.
+The genetic algorithm (GA) is a useful class of optimisation routines
+which are inspired by genetic processes in biology. Currently, there are
+many optimisation routines in this space of nature-inspired optimisers
+-- routines which look at processes in our natural world, and hope to
+capture what these natural processes can accomplish in the language of
+mathematics. It evokes incredibly powerful imagery, with Darwin's theory
+of natural selection, as well as our broader understanding of genetics.
+In fact, at first glance, the typical binary-coded genetic algorithm
+could easily be used as a standin for actual genetic code! If we pair
+off each `digit' in our encoding, we could have a quaternary system that
+could represent the C, G, A, and T nucleobases of DNA directly. While
+quite exciting, the comparisons do end soon though, since genetic
+encodings do not typically go as far to replicate the double stranded
+nature of DNA, nor the fact that nucleobases must bind to each other in
+specific pairings (C \& G, and A \& T). It could be argued that GAs are
+instead replicating genetic information being stored in RNA rather than
+DNA. While it is theorised that this method of storing life's genetic
+information in RNA is possible and could perhaps have been the origins
+of life, no direct evidence of this remains, and the natural world as we
+know it does not itself function in such a manner.
 
 \section{Literature Review}\label{literature-review}
 
@@ -477,14 +465,14 @@ from other optimisers.
 An efficient way to sample uniformly from the surface of an \(N\)-ball
 is given by Marsaglia (\citeproc{ref-marsaglia1972}{1972}).
 
-\[\B v_{k+1} = \B x_k +h \B u.\]
+\[\B v_{k+1} = \B x_k +\nu \B u.\]
 
 Here, \(\B u\) is a normalised \(N\)-dimensional vector sample from the
 standard normal distribution such that,
 
 \(\B u = \frac1{\lVert \B z \rVert}\B z\) and
-\(\B z \sim \mathcal{N}_N\left(0,1\right),\) and where \(h\) is a step
-size hyperparameter.
+\(\B z \sim \mathcal{N}_N\left(0,1\right),\) and where \(\nu\) is a
+learning rate (or step size) hyperparameter.
 
 \section{Genetic algorithms: the GA
 package}\label{genetic-algorithms-the-ga-package}
@@ -787,15 +775,20 @@ Game!}\label{arbitrary-objectives-a-drone-game}
 Parameters -\textgreater{} 5,5-Neural network -\textgreater{} trained
 with GA -\textgreater{} Drone Game
 
-\section{Analysis}\label{analysis}
+\section{Analysis of Test Functions}\label{analysis-of-test-functions}
 
-We will now look at the behaviour of each optimiser by looking at the
-traces they leave when tested for 100 steps on a 2-dimensional parabolic
-test surface. This is a very basic test surface, but it will help us
-orient ourselves with a basic understanding of each of these optimisers'
-typical behaviour patterns. Additionally, above the traces, a line graph
-of the performance over the iterations for each optimiser is shown for
-simpler comparison.
+We now consider the behaviour of various optimisers. We can gain an
+understanding of our optimisers by applying each optimisation routine to
+benchmark functions -- frequently referred to as `test surfaces',
+especially in the 2-dimensional case. These test surfaces are cost
+functions with known hurdles to optimisation routines.
+
+\ldots looking at the traces they leave when tested for 100 steps on a
+2-dimensional parabolic test surface. This is a very basic test surface,
+but it will help us orient ourselves with a basic understanding of each
+of these optimisers' typical behaviour patterns. Additionally, above the
+traces, a line graph of the performance over the iterations for each
+optimiser is shown for simpler comparison.
 
 The coloured dots show the progression of the best point found by each
 optimiser. White crosses show each function evaluation by the optimiser.
@@ -810,50 +803,54 @@ accessible in
 To give a point of comparison, we'll also take a look at the behaviour
 of the Newton-Raphson \& gradient descent optimisers.
 
-\begin{figure}
+\begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/newt-raph-all.pdf}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/para-newt-raph.pdf}
 
 }
 
-\caption{\label{fig-newt-raph}Newton-Raphson with nu=0.5.}
+\caption{\label{fig-newt-raph}The Newton-Raphson optimiser on a
+parabolic test surface with nu=0.5.}
 
 \end{figure}%
 
-\begin{figure}
+\begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/grad-desc-all.pdf}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/para-grad-desc.pdf}
 
 }
 
-\caption{\label{fig-grad-desc}Gradient descent with nu=0.2.}
+\caption{\label{fig-grad-desc}The gradient descent optimiser on a
+parabolic test surface with nu=0.2.}
 
 \end{figure}%
 
 Our hessian- and gradient-based optimisers have both performed extremely
 well, as expected! Their traces are quite indistinguishable from one
-another. Without any penalisation values, \(\nu\), Newton-Raphson did
+another. With a learning rate parameter, \(\nu = 1\), Newton-Raphson did
 outperform gradient descent by reaching the centre in just a few steps.
-But after choosing penalisation values for each optimiser, as shown
-above in Figure~\ref{fig-newt-raph} and Figure~\ref{fig-grad-desc}, we
-end up with very similar results. Both methods move directly towards the
-minimum point at \(\left(0, 0\right)\) immediately, their step sizes
-decreasing as the slope decreases. This is of course a problem extremely
-well-suited to such hessian- and gradient-based methods.
+But after choosing learning rate (or step size) values for each
+optimiser, as shown above in Figure~\ref{fig-newt-raph} and
+Figure~\ref{fig-grad-desc}, we end up with very similar results. Both
+methods move directly towards the minimum point at \(\left(0, 0\right)\)
+immediately, with the size of each step decreasing as the slope
+decreases. This is of course a problem extremely well-suited to such
+hessian- and gradient-based methods.
 
-\begin{figure}
+\begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/pure-rs-all.pdf}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/para-pure-rs.pdf}
 
 }
 
-\caption{\label{fig-pure-rs}Pure random search.}
+\caption{\label{fig-pure-rs}The Pure Random Search optimiser on a
+parabolic test surface.}
 
 \end{figure}%
 
@@ -898,16 +895,75 @@ that ranking improvement, which encompasses 60\% of the entire
 population, is meaningless if that 60\% improvement takes too many
 additional iterations.
 
-\begin{figure}
+\begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rand-sear-all.pdf}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/para-rand-sear.pdf}
 
 }
 
-\caption{\label{fig-rand-sear}Fixed step size random search with
-nu=0.2.}
+\caption{\label{fig-rand-sear}The Fixed Step Size Random Search
+optimiser on a parabolic test surface with nu=0.2.}
+
+\end{figure}%
+
+\subsection{Unimodal, flat optimum:
+Rosenbrock}\label{unimodal-flat-optimum-rosenbrock}
+
+\textless-Explain test function. -\textgreater{}
+
+\textless-Comparisons.-\textgreater{}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-newt-raph.pdf}
+
+}
+
+\caption{\label{fig-rosen-newt-raph}The Newton-Raphson optimiser on a
+Rosenbrock test surface with nu=0.5.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-grad-desc-nu0.0002.pdf}
+
+}
+
+\caption{\label{fig-rosen-grad-desc}The gradient descent optimiser on a
+Rosenbrock test surface with nu=0.0002.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-pure-rs.pdf}
+
+}
+
+\caption{\label{fig-rosen-pure-rs}The Pure Random Search optimiser on a
+Rosenbrock test surface.}
+
+\end{figure}%
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-rand-sear.pdf}
+
+}
+
+\caption{\label{fig-rosen-rand-sear}The Fixed Step Size Random Search on
+a Rosenbrock test surface with nu=0.2.}
 
 \end{figure}%
 
@@ -939,7 +995,7 @@ capable of to come through in a single step.
 So perhaps we try a more balanced value: 10 iterations of population
 size 10.
 
-Ah phooey. We now have the issue of rarer events like mutation
+We now have the issue of rarer events like mutation
 \(\left(p=0.1\right)\) only occurring once on average per population
 step. Additionally, 10 population steps is still squeezing the algorithm
 quite a bit. This seems hardly fair. Random search will have trouble
@@ -969,7 +1025,7 @@ population size 50 over 100 population iterations.}
 
 \end{figure}%
 
-Wow! Clearly GAs do a pretty fine job. In just 2 population steps we had
+Clearly GAs do a pretty fine job. In just 2 population steps we had
 already had at least one full set of 10 drones successfully completing
 the course. Additionally by iteration 25, even the mean score of the
 drones is comfortably sitting at \textasciitilde8. Noting that minimum
@@ -999,7 +1055,7 @@ still 1250 function calls.
 
 \newpage
 
-\section{Bibliography}\label{bibliography}
+\section{References}\label{references}
 
 \protect\phantomsection\label{refs}
 \begin{CSLReferences}{1}{1}
@@ -1037,17 +1093,14 @@ Scrucca, Luca. 2013. {``{\textbf{GA}}: A Package for Genetic Algorithms
 in{\emph{R}}.''} \emph{Journal of Statistical Software} 53 (4).
 \url{https://doi.org/10.18637/jss.v053.i04}.
 
-\bibitem[\citeproctext]{ref-wolpert1997}
-Wolpert, D. H., and W. G. Macready. 1997. {``No Free Lunch Theorems for
-Optimization.''} \emph{IEEE Transactions on Evolutionary Computation} 1
-(1): 67--82. \url{https://doi.org/10.1109/4235.585893}.
-
 \bibitem[\citeproctext]{ref-zabinsky2011}
 Zabinsky, Zelda B. 2011. {``Random Search Algorithms.''} \emph{Wiley
 Encyclopedia of Operations Research and Management Science}, ahead of
 print, January. \url{https://doi.org/10.1002/9780470400531.eorms0704}.
 
 \end{CSLReferences}
+
+\section{Bibliography}\label{bibliography}
 
 
 

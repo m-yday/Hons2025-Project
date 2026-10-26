@@ -1,5 +1,11 @@
-#optimisation
+# HELLO! Welcome to this beautiful mess of a file!
 
+# All you need to adjust is:
+# the objective surface, OBJ: line 264
+# the update procedure, UP: line 268
+# and possibly the nu value, UP$nu: line 271
+
+# presets are already set up to make this easier, see lines 141-205; 227-257.
 ################################################################################
 #                        setup + objective functions                           #
 
@@ -10,23 +16,22 @@ library(GA)
 library(numDeriv)
 library(patchwork)
 
+# scalefactor: factor by which many values are scaled in order to accommodate larger features. (If a certain test surface creates features in -10:10, scalefactor <- 2 would be fitting, since the default is -5:5)
 scalefactor <- 1
-minmax <- c(-5,5)*scalefactor
+
+# bounds <- c(-5,5)*scalefactor
 DIM <- 2
 resolution <- 0.05*scalefactor
 
-startbounds <- c(-5,-4)*scalefactor
+# startbounds <- c(-5,-4)*scalefactor
 iterlim <- 100
 
-
-#                    objective function options
+#                    objective function options (test surfaces)
 test_Rastrigin <- function(x){
   A<-10
   n<-length(x)
   f <- A*n + sum(x^2-A*cos(2*pi*x))
-  min_point <<- rep(0,times=n)
-  transform_val <- "identity"
-  breaks_val    <- waiver()
+  #min_point <- rep(0,times=n)
   return(f)
 }
 test_Ackley <- function(x){
@@ -35,48 +40,246 @@ test_Ackley <- function(x){
   f <- -20*exp(-0.2*sqrt(0.5*(x1^2+x2^2))) -
     exp(0.5*(cos(2*pi*x1)+cos(2*pi*x2))) +
     exp(1) + 20
-  min_point <<- c(0,0)
-  transform_val <- "identity"
-  breaks_val    <- waiver()
+  #min_point <<- c(0,0)
   return(f)
 } # 2 dim
-test_sphere <- function(x){
-  n <- length(x)
+test_parabola <- function(x){
+  #n <- length(x)
   f <- t(x) %*% x
-  min_point <<- rep(0,times=n)
-  transform_val <- "identity"
-  breaks_val    <- waiver()
+  #min_point <<- rep(0,times=n)
   return(f)
 }
 test_eggholder <- function(x){
   x1 <- x[1]*200 #rescaling
   x2 <- x[2]*200
   f  <- -(x2+47)*sin(sqrt(abs(x1/2+(x2+47))))-x1*sin(sqrt(abs(x1-(x2+47))))
-  min_point <<- c(512,404.2319)
-  transform_val <- "identity"
-  breaks_val    <- waiver()
+  #min_point <<- c(512,404.2319)
   return(f)
 } # 2 dimensions only
 test_Rosenbrock <- function(x){
   n <- length(x)
   f <- sum(100*(x[-1] -(x[-n])^2)^2 + (1-x[-n])^2)
-  min_point <<- rep(1,times=n)
-  transform_val <- "log1p"
-  breaks_val    <- c(1,10,100,1000,10000,50000)
+  #min_point <<- rep(1,times=n)
   return(f)
 } # dim > 1
+test_Styblinski_Tang <- function (x){
+  #n <- length(x)
+  f <- 0.5 * sum( x^4 -16*x^2 +5*x )
+  #min_point <<- rep(-2.903534,times=n)
+  return(f)
+}
 
-# drop ensures the 1x1 matrix becomes a scalar
-#possibly useful?
-# obj.df <- function(X){ 
-#   x<-c(X) 
-#   t(x) %*% x
+
+# NU: LEARNING RATE
+nu_global<-0.05
+
+# optimisation function options
+# these functions take in the current position (x), 
+# returning the next x value based on their algorithm.
+
+step_gradient_descent  <- function(x,nu){
+  next_x <- x-nu*grad(OBJ$func,x,method="simple")
+  return(next_x)
+}
+# step_random_search must use MIN_X, not simply X when selecting update procedure.
+# step_random_search (FSSRS) has a normalised (1) step size. nu acts as a multiplicative factor on this. 
+step_random_search     <- function(x,nu){
+  u <- rnorm(n=DIM)
+  r <- sqrt(t(u)%*%u)
+  next_x <- x+nu*(u/r)
+  return(next_x)
+}
+
+# nu unused in step_pure_rs
+step_pure_rs           <- function(x,nu=NA,bounds=minmax){
+  next_x <- runif(n=DIM,bounds[1],bounds[2]) 
+  return(next_x)
+}
+
+step_newton_raphson    <- function(x,nu){
+  next_x <- x - nu*(solve(hessian(OBJ$func,x))) %*% (grad(OBJ$func,x))
+  return(next_x)
+}
+
+# step_genetic_algorithm <- function(x){ # might need to rethink algorithm selection
+#   #real valued genetic algorithm
+#   ga(type="real-valued",
+#      fitness= OBJ$func,
+#      
+#      )
+#   
 # }
+
+
+# Objective functions
+# these are only defined for 2 dimensions.
+
+# S3 class constructor
+
+new_objective_surface <- function(func, plot_name, file_prefix, min,
+                                  startbounds, bounds, transform, breaks) {
+  structure(
+    list(func        = func,
+         plot_name   = plot_name,
+         file_prefix = file_prefix,
+         min         = min,
+         startbounds = startbounds,
+         bounds      = bounds,
+         transform   = transform,
+         breaks      = breaks),
+    class = "objective_surface"
+  )
+}
+# func: name of test function.
+# plot_name: names on ggplot graphs. "...on `plot_name` surface."
+# file_prefix: rendered files saved with filename: `file_name`-`optim_name`.svg
+# min: minimum point(s) of test function.
+# startbounds: 1-dimensional bounds from which the initial position is randomly selected. This is recycled for both dimensions. 
+# bounds: 1-dimensional bounds of the entire search space. This is recycled for both dimensions.
+# transform, breaks: passed to ggplot scale functions to ensure correct scaling.
+
+obj_Rastrigin <- new_objective_surface(
+  func        = test_Rastrigin,
+  plot_name   = "a Rastrigin",
+  file_prefix = "rastrigin",
+  min         = c(0,0),
+  startbounds = c(-5,-4),
+  bounds      = c(-5,5),
+  transform   = "identity",
+  breaks      = waiver()
+)
+
+obj_Ackley <- new_objective_surface(
+  func        = test_Ackley,
+  plot_name   = "an Ackley",
+  file_prefix = "ackley",
+  min         = c(0,0),
+  startbounds = c(-5,-4),
+  bounds      = c(-5,5),
+  transform   = "identity",
+  breaks      = waiver()
+)
+
+obj_parabola <- new_objective_surface(
+  func        = test_parabola,
+  plot_name   = "a parabolic",
+  file_prefix = "para",
+  min         = c(0,0),
+  startbounds = c(-5,-4),
+  bounds      = c(-5,5),
+  transform   = "identity",
+  breaks      = waiver()
+)
+
+obj_eggholder <- new_objective_surface(
+  func        = test_eggholder,
+  plot_name   = "an eggholder",
+  file_prefix = "egg",
+  min         = c(512,404.2319),
+  startbounds = c(-5,-4),
+  bounds      = c(-5,5),
+  transform   = "identity",
+  breaks      = waiver()
+)
+
+obj_Rosenbrock <- new_objective_surface(
+  func        = test_Rosenbrock,
+  plot_name   = "a Rosenbrock",
+  file_prefix = "rosen",
+  min         = c(1,1),
+  startbounds = c(-5,-4),
+  bounds      = c(-5,5),
+  transform   = "log1p",
+  breaks      = c(1,10,100,1000,10000,50000)
+)
+
+obj_Styblinski_Tang <- new_objective_surface(
+  func        = test_Styblinski_Tang,
+  plot_name   = "a Styblinski-Tang",
+  file_prefix = "styb-tang",
+  min         = c(-2.903534,-2.903534),
+  startbounds = c(5,4),
+  bounds      = c(-5,5),
+  transform   = "identity",
+  breaks      = waiver()
+)
+
+
+# Update Procedures
+
+# S3 class constructor
+new_update_procedure <- function(func, use_min_x, optim_name, plot_name, nu) {
+  structure(
+    list(func       = func,
+         use_min_x  = use_min_x,
+         optim_name = optim_name,
+         plot_name  = plot_name,
+         nu         = nu),
+    class = "update_procedure"
+  )
+}
+#func: optimiser function
+#use_min_x: boolean. selects `min_x` or `x` as parameter for `func`.
+#optim_name: identifier used in filenames for this optimiser.
+#plot_name: name used in ggplot graphics for this optimiser.
+#overwrite_nu: 
+
+up_gradient_descent <- new_update_procedure(
+  func       = step_gradient_descent,
+  use_min_x  = FALSE,
+  optim_name = "grad-desc",
+  plot_name  = "gradient descent",
+  nu         = 0.2
+)
+
+up_random_search <- new_update_procedure(
+  func       = step_random_search,
+  use_min_x  = TRUE,
+  optim_name = "rand-sear",
+  plot_name  = "FSSRS",
+  nu         = 0.2
+)
+
+up_newton_raphson <- new_update_procedure(
+  func       = step_newton_raphson,
+  use_min_x  = FALSE,
+  optim_name = "newt-raph",
+  plot_name  = "Newton-Raphson",
+  nu         = 0.5
+)
+
+up_pure_rs <- new_update_procedure(
+  func       = step_pure_rs,
+  use_min_x  = FALSE,
+  optim_name = "pure-rs",
+  plot_name  = "PRS",
+  nu         = NULL
+)
+
+################################################################################
+
+#-#-# #-#-# #-#-# #-#-# #        TEST FUNCTION         # #-#-# #-#-# #-#-# #-#-#
+
+# select the objective function/test surface: 
+OBJ <- obj_Rosenbrock
+
+
+#-#-# #-#-# #-#-# #-#-# #       UPDATE PROCEDURE       # #-#-# #-#-# #-#-# #-#-#
+UP <- up_newton_raphson
+
+# overwrite nu?
+# UP$nu <- 
+
+################################################################################
+
+#                                setup surface
+
+minmax <- OBJ$bounds #this is done for pure_rs
 
 base_theme <- theme_minimal() 
 theme_set(base_theme)
 
-xseq <- seq(minmax[1],minmax[2],resolution) #symmetric. 
+xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],resolution) #symmetric. 
 # geom_tile is based on the centre of the tile.
 
 # expand_grid for any amount of dimensions 
@@ -87,100 +290,50 @@ xseq <- seq(minmax[1],minmax[2],resolution) #symmetric.
 # or:
 # expand_grid(xseq,xseq)   for DIM = 2
 
-################################################################################
-
-#-#-# #-#-# #-#-# #-#-# #        TEST FUNCTION         # #-#-# #-#-# #-#-# #-#-#
-obj <- function(x){ 
-  return(test_Rosenbrock(x))
-}
-
-# settings for colour scales:
-# passed to scale_fill_viridis_c(), & eventually, continuous_scale()
-
-# linear: 
-# transform_val <- "identity"
-# breaks_val    <- waiver()
-
-# log:
-transform_val <- "log1p"
-breaks_val    <- c(1,10,100,1000,10000,50000)
-
-################################################################################
-#                            optimisation functions                            #
-
-#                                setup surface
-
 # gg is the surface information of the objective function. 
 ggdata <- expand_grid(!!! rep(list(xseq),DIM),
                       .name_repair=~make.names(1:DIM))|>
   mutate(Y=pmap_vec(.l=pick(everything()),
-                    .f=~ obj(c(...))))
+                    .f=~ OBJ$func(c(...))))
 
 #plot the objective surface
 p_obj <- ggplot()+
   geom_raster(data=ggdata,aes(x=X1,y=X2,fill=Y)) + 
-  geom_point(data=as_tibble(t(min_point)), aes(x=V1,y=V2),
+  geom_point(data=as_tibble(t(OBJ$min),
+                            .name_repair=~make.names(1:DIM)),
+             aes(x=X1,y=X2),
              colour='red',shape=4,alpha=0.5)+
   scale_fill_viridis_c(option="E",
-                       transform=transform_val,breaks=breaks_val
+                       transform=OBJ$transform,breaks=OBJ$breaks
   ) + coord_fixed()
 p_obj
 
-nu_global<-0.05
 
-# optimisation function options
-# these functions take in the current position (x), 
-# returning the next x value based on their algorithm.
+#-#-# #-#-# #-#-# #-#-# #          OPTIMISATION        # #-#-# #-#-# #-#-# #-#-#
 
-step_gradient_descent  <- function(x,nu=0.0002){
-  next_x <- x-nu*grad(obj,x,method="simple")
-  return(next_x)
-}
-# step_random_search must use MIN_X, not simply X when selecting update procedure.
-# step_random_search (FSSRS) has a normalised (1) step size. nu acts as a multiplicative factor on this.
-step_random_search     <- function(x,nu=.2){
-  u <- rnorm(n=DIM)
-  r <- sqrt(t(u)%*%u)
-  next_x <- x+nu*(u/r)
-  return(next_x)
-}
-# nu unused in step_pure_rs
-step_pure_rs           <- function(x,nu=.2,bounds=minmax){
-  next_x <- runif(n=DIM,bounds[1],bounds[2]) 
-  return(next_x)
-}
-step_newton_raphson    <- function(x,nu=0.5){
-  next_x <- x - nu*(solve(hessian(obj,x))) %*% (grad(obj,x))
-  return(next_x)
-}
-step_genetic_algorithm <- function(x){ # might need to rethink algorithm selection
-  #real valued genetic algorithm
-  ga(type="real-valued",
-     fitness= obj,
-     
-     )
+run_optim <- function(OBJ,UP,nu=NULL){
+  if(!is.null(nu)){
+    UP$nu <- nu
+  }
   
 }
 
-################################################################################
 
-#-#-# #-#-# #-#-# #-#-# #       UPDATE PROCEDURE       # #-#-# #-#-# #-#-# #-#-#
-update_opt <- function(x, min_x, nu=nu_global){
-  step_gradient_descent(x)
-}
-
-#-#-# #-#-# #-#-# #-#-# #       RUN OPTIMISATION       # #-#-# #-#-# #-#-# #-#-#
-
-run_optim <- function(x_0, names){
-  
-}
+update_opt <- (
+  if (UP$use_min_x) 
+    function(x, min_x, nu=nu_global) UP$func(min_x,nu=UP$nu) 
+  else 
+    function(x, min_x, nu=nu_global) UP$func(x,    nu=UP$nu)
+  )
 
 #next we follow the path of the optimisation function
 set.seed(111)
 
-start <- runif(n=DIM,startbounds[1],startbounds[2])
+start <- runif(n=DIM,OBJ$startbounds[1],OBJ$startbounds[2])
 names(start)=names(ggdata)[1:DIM]
 #as_tibble(t(start)) # -4.41,-4.27
+
+# run_optim(start, )
 
 opt_trace <- matrix(NA, nrow=iterlim, ncol=2*(DIM+1)+1,
                     dimnames= list(NULL,
@@ -194,14 +347,14 @@ opt_trace <- matrix(NA, nrow=iterlim, ncol=2*(DIM+1)+1,
 
 
 xi <- min_x <- start
-yi <- min_y <- obj(min_x)
+yi <- min_y <- OBJ$func(min_x)
 
 opt_trace[1,] <- c(1,xi,yi,min_x,min_y)
 
 for(i in 2:iterlim){
   
   xi <- update_opt(xi,min_x) 
-  yi <- obj(xi) #objective being minimised
+  yi <- OBJ$func(xi) #objective being minimised
   
   if(yi<min_y){
     min_y <- yi
@@ -214,7 +367,7 @@ for(i in 2:iterlim){
 
 #                              plot and animate
 
-
+# trace_segments: how much of the trace is used in each facet
 trace_segments <- 
   bind_rows(bind_cols(opt_trace[c(1,1),],facet=1), 
             #duplicated step 1 due to minimum count being 2.
@@ -223,22 +376,24 @@ trace_segments <-
             bind_cols(opt_trace[1:10  ,],facet=4),
             bind_cols(opt_trace[1:50  ,],facet=5),
             bind_cols(opt_trace[1:100 ,],facet=6))
+
 facet_names <- c( `1` =   "1 Step",
                   `2` =   "2 Steps",
                   `3` =   "5 Steps",
                   `4` =  "10 Steps",
                   `5` =  "50 Steps",
                   `6` = "100 Steps")
+
 p_static <- p_obj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
-             colour='yellow',shape=4)+
+             colour='aquamarine',shape=4)+
   geom_point(data=trace_segments,aes(x=X1,y=X2,group=Iteration),
              colour="white",alpha=0.3,shape=4)+
   geom_point(data=trace_segments,aes(x=MinX1,y=MinX2,colour=Iteration))+
   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
   facet_wrap(facets=~facet,nrow=3,
              labeller = as_labeller(facet_names))+ 
-  xlim(minmax*1.01) + ylim(minmax*1.01)
+  xlim(minmax*1.01) + ylim(minmax*1.01) # 1% expansion factor
 
 p_static
 
@@ -247,8 +402,9 @@ p_performance <- ggplot(data=opt_trace, aes(x=Iteration)) +
   geom_line(aes(y=MinY, colour = Iteration),show.legend = FALSE)+
   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
   labs(y="Y", x="Iteration",
-       title="Behaviour of the gradient descent optimiser on a Rosenbrock surface.",
-       subtitle="With nu = 0.0002.")+ 
+       title= sprintf(
+         "Behaviour of the %s optimiser on %s surface.",
+         UP$plot_name, OBJ$plot_name))+ 
   theme_bw() 
 
 p_performance
@@ -258,14 +414,16 @@ p_full <- p_performance/p_static +
 
   
 p_full
-ggsave(plot=p_full,filename = "../Render/rosen-grad-desc-nu0.0002-%03d.svg",
+ggsave(plot=p_full,
+       filename = sprintf("../Render/%s-%s-%%03d.svg",
+                          OBJ$file_prefix, UP$optim_name),
        width=120, height=180, units="mm", dpi="retina")
 
 p_anim <-
 animate(
   p_obj+
   geom_point(data=as_tibble(t(start)), aes(x=X1,y=X2),
-             colour='yellow',shape=4)+
+             colour='royalblue',shape=4)+
   geom_point(data=opt_trace,aes(x=X1,y=X2,group=Iteration),
              colour="white",shape=4)+
   geom_point(data=opt_trace,aes(x=MinX1,y=MinX2,colour=Iteration))+
@@ -278,16 +436,25 @@ animate(
 p_anim
 
 anim_save(nframes= iterlim,
-          filename="rosen-grad-desc-nu0.0002.gif",
+          filename=sprintf("%s-%s.gif", OBJ$file_prefix, UP$optim_name),
           path="../Render",
           animation=p_anim)
 
 
 # cannot train GA stepwise. The GA must be fitted first and then tested.
 
+
+
+
+
+
+
+
+
+
 #minimisation problem must be changed to maximisation problem
 ga_obj <- function(x){
-  -obj(x)
+  -OBJ$func(x)
 }
 
 ga_model <- ga(type="real-valued",
@@ -305,7 +472,7 @@ ga_model@population
 
 # we define a monitoring function so we can attempt to note all populations generated.
 # let us do this with tidyverse
-custom_ga_monitor <- function(model) {
+plot_monitor <- function(model) {
   best <- which.max(model@fitness)
   pop <- model@population |> as_tibble() |> bind_cols(Iteration=model@iter)
   plot(p_obj+
@@ -320,5 +487,29 @@ GA <- ga(type = "real-valued",
          fitness = ga_obj,
          lower = c(-5, -5), upper = c(5, 5), popSize = 10,
          maxiter = iterlim, 
-         monitor = custom_ga_monitor)
+         monitor = plot_monitor)
 summary(GA)
+
+
+
+NOW <- now() #snapshot to label file generated
+
+# custom monitor to print population to file
+print_monitor <- function(ga_model){
+  # print all populations to file, includes the iteration it was generated in
+  bind_cols(Pop_Iteration=ga_model@iter,as_tibble(ga_model@population)) |> 
+    write_csv(file=paste0("./population_generated/",NOW,".csv"),append=TRUE)
+  print(paste("Population iteration:", ga_model@iter))
+}
+GA <- ga(type = "real-valued",
+         fitness=run_batch,
+         drones=d,
+         obst=obst,
+         lower = rep(-10, npars), upper = rep(10, npars),
+         maxiter = GA_iterlim,
+         monitor = print_monitor,
+         keepBest = TRUE)
+summary(GA)
+
+fcalls <- read_csv(paste0("./population_generated/",NOW,".csv"),
+                   col_names=FALSE)
