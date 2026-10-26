@@ -191,6 +191,10 @@
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
+% fallback for those not using the hyperref driver hyperxmp:
+\makeatletter
+\@ifundefined{xmpquote}{\newcommand{\xmpquote}[1]{#1}}{}
+\makeatother
 \hypersetup{
   pdftitle={Are real-coded genetic algorithms more than a metaphor?},
   pdfauthor={Shvet Maharaj},
@@ -741,8 +745,6 @@ to increase diversity.
 Essentially regularisation! We are turning the mutation operators into
 random search!
 
-Population staging
-
 \subsubsection{\texorpdfstring{\textbf{Mutation}}{Mutation}}\label{mutation}
 
 The randomly shifting of the values of `genes' (parameters) within
@@ -768,16 +770,17 @@ of increased fitness (exploitation).
 
 \section{Methodology}\label{methodology}
 
-Each trial was conducted by setting the same seed prior to running: 111.
+The trials in this paper were conducted using R, with figures generated
+in \texttt{OptAnimation.R}. The \texttt{sessionInfo()} of the machine
+follows.
 
-For GA, since it typically maximises, we take the negative of the
-objective function.
+A seed of \texttt{111} was set prior to running the code.
 
-\section{Arbitrary Objectives: a Drone
-Game!}\label{arbitrary-objectives-a-drone-game}
+With the \texttt{futurize} package and the option \texttt{seed=TRUE}
+set, we can ensure reproducibility of the results.
 
-Parameters -\textgreater{} 5,5-Neural network -\textgreater{} trained
-with GA -\textgreater{} Drone Game
+For GA, since the process maximises by default, we take the negative of
+the objective function.
 
 \section{Analysis of Test Functions}\label{analysis-of-test-functions}
 
