@@ -65,6 +65,46 @@
 \fi
 \makeatother
 
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 
 \usepackage{longtable,booktabs,array}
 \newcounter{none} % for unnumbered tables
@@ -208,7 +248,7 @@
 
 \title{Are real-coded genetic algorithms more than a metaphor?}
 \author{Shvet Maharaj}
-\date{26 October 2026}
+\date{27 October 2026}
 \begin{document}
 \maketitle
 
@@ -259,6 +299,8 @@ to compare optimisers, GAs are most informatively compared with fellow
 direct routines. Therefore, this paper will primarily discuss the
 difference between genetic algorithms and their closest competitors:
 derivative-free optimisers, also known as black-box (or direct) methods.
+This thesis compares GAs with random search methods. Newton-Raphson and
+gradient descent are included only as reference points.
 
 The genetic algorithm (GA) is a useful class of optimisation routines
 which are inspired by genetic processes in biology. Currently, there are
@@ -267,6 +309,8 @@ many optimisation routines in this space of nature-inspired optimisers
 capture what these natural processes can accomplish in the language of
 mathematics. It evokes incredibly powerful imagery, with Darwin's theory
 of natural selection, as well as our broader understanding of genetics.
+However, the resemblance to biology is limited.
+
 In fact, at first glance, the typical binary-coded genetic algorithm
 could easily be used as a standin for actual genetic code! If we pair
 off each `digit' in our encoding, we could have a quaternary system that
@@ -280,6 +324,37 @@ DNA. While it is theorised that this method of storing life's genetic
 information in RNA is possible and could perhaps have been the origins
 of life, no direct evidence of this remains, and the natural world as we
 know it does not itself function in such a manner.
+
+The rapid growth of nature-inspired methods has raised concern across
+the field of metaheuristics (Aranha et al., 2021). It could be observed
+that the real-coded genetic algorithm (RCGA) has largely avoided this
+criticism. This thesis examines whether that position is deserved.
+
+Although these methods are powerful and find application in numerous
+sub-disciplines of statistics and machine learning, the particular
+application to finding estimates of real-valued parameter vectors
+stretches the metaphor quite a bit. In the present paper, we attempt to
+answer the question
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi})}
+\tightlist
+\item
+  IS GA for continuous parameter search just random search (Monte-Carlo
+  Search) in disguise?
+\item
+  What advantages, if any, do RCGAs provide over brute force random
+  search?
+\end{enumerate}
+
+Section 2 reviews the development of GAs and addresses No Free Lunch
+theorems. Section 3 defines the optimisers. Section 4 describes the
+genetic operators in the GA package (Scrucca
+(\citeproc{ref-scrucca2013}{2013})). Section 5 sets out the methodology.
+Section 6 applies each optimiser to four test surfaces. Sections 7 and 8
+present the results and conclusions.
+
+\newpage
 
 \section{Literature Review}\label{literature-review}
 
@@ -380,6 +455,8 @@ has been cause for concern for the entire field of metaheuristics
 mostly unscathed. Let us explore how much of that is due to their
 inherent performance, and how much may be due to their proximity to the
 performance GAs more broadly.
+
+\newpage
 
 \section{Design}\label{design}
 
@@ -726,7 +803,9 @@ This process is performed for each pair of parent candidate solutions.
 
 Notably, Laplace crossover is the only method which does not have the
 issue of its child parameter value being constrained to the range given
-by its parent values.
+by its parent values. NB: Blend crossover does not strictly confine
+parameters to the range of its parent values, but the zone in which
+parameters are selected is defined in terms of those parent values.
 
 It is clear that nearly regardless of the method chosen for crossover,
 the outcome is quite similar. The parameter value of the child will be
@@ -735,15 +814,14 @@ means that diversity in the solution space will gradually dwindle as the
 algorithm progresses. This lack of diversity will ensure the algorithm
 is less and further less able to better the fitness value as the
 population homogenises, due to not being able to effectively explore the
-solution space.
+solution space. This essentially becomes a form of regularisation,
+instead of a source of diversity. This leaves the mutation operator as
+the sole source of diversity in these cases.
 
 To combat this -- other than avoiding the use of crossover methods with
 are not the Laplace method provided -- we can allow for mutation to help
 disturb our settling into any part of the solution space, and allow us
 to increase diversity.
-
-Essentially regularisation! We are turning the mutation operators into
-random search!
 
 \subsubsection{\texorpdfstring{\textbf{Mutation}}{Mutation}}\label{mutation}
 
@@ -768,47 +846,204 @@ population, allowing us to explore more of the sample space
 (exploration), while selection operations decrease diversity in favour
 of increased fitness (exploitation).
 
+\newpage
+
 \section{Methodology}\label{methodology}
 
+\subsection{Software and
+reproducibility}\label{software-and-reproducibility}
+
 The trials in this paper were conducted using R, with figures generated
-in \texttt{OptAnimation.R}. The \texttt{sessionInfo()} of the machine
-follows.
+in \texttt{OptAnimation.R}, and \texttt{DroneGame.R}. Theses scripts,
+alongside the \texttt{sessionInfo()} of the machine, can be found in the
+appendices. Genetic algorithms were implemented using version 3.2.5 of
+the \texttt{GA} package (Scrucca (\citeproc{ref-scrucca2013}{2013})). A
+seed of 111 was set prior to running the trials. With the
+\texttt{futurize} package and the option \texttt{seed\ =\ TRUE} set, we
+can ensures reproducibility of the results while allowing for parallel
+processing.
 
-A seed of \texttt{111} was set prior to running the code.
+\subsection{Test surfaces}\label{test-surfaces}
 
-With the \texttt{futurize} package and the option \texttt{seed=TRUE}
-set, we can ensure reproducibility of the results.
+Each optimiser was applied to four 2-dimensional test surfaces. These
+are cost functions with known hurdles to optimisation routines. Two are
+unimodal: the parabolic and the Rosenbrock function. Two are multimodal:
+the Rastrigin and Styblinski-Tang functions. This lets us compare
+behaviour between simple surfaces against surfaces with many local
+minima. Each surface was searched over the range \(\left(-5,5\right)\)
+in both dimensions. Table 1 summarises each surface.
 
-For GA, since the process maximises by default, we take the negative of
-the objective function.
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2361}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.4306}}@{}}
+\caption{Test surfaces and their global
+minima.}\label{tbl-surfaces}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Surface
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Global Min
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Formula
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Surface
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Global Min
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Formula
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Parabola & Unimodal & (0,0) & \(\sum_{i=1}^2 x_i^2\) \\
+Rosenbrock & Unimodal & (1,1) &
+\(\left(100*(x_{2}-x_1^2)^2+(1-x_1)^2 \right)\) \\
+Rastrigin & Multimodal & (0,0) &
+\(20+\sum^2_{i=1}\left(x^2_i-10\cos\left(2\pi x_i\right)\right)\) \\
+Styblinski-Tang & Multimodal & \textasciitilde(-2.9,-2.9) &
+\(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\) \\
+\end{longtable}
+
+\subsection{Optimisers and settings}\label{optimisers-and-settings}
+
+Four optimisers were compared on the test surfaces. Newton-Raphson and
+gradient descent serve as points of comparison. PRS and FSSRS are direct
+search methods, and so are GA's closest competitors. Their updating
+equations are given in Section 3.2. FSSRS uses the strictly improving
+update procedure from Section 3.1. PRS, Newton-Raphson and gradient
+descent use the direct update procedure. (It should be noted though that
+PRS completely disregards the previous position, \(\B x\), it was given,
+so its updating procedure is irrelevant.) Gradients and Hessians were
+approximated numerically using the \texttt{numDeriv} package. Table 2
+shows the learning rate, \(\nu\), used for each optimiser on each
+surface. Default \(\nu\) values for each optimiser were selected through
+trial and error on the parabolic test surface. Where necessary, the
+defaults could be overwritten to ensure the plot traces converged. It is
+important to note that \(\nu\) values are not directly comparable
+between optimisers, since the optimisers are not normalised against each
+another in terms of how they traverse surfaces.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2647}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1471}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1765}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1618}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2500}}@{}}
+\caption{Learning rate (\(\nu\)) for each optimiser and
+surface.}\label{tbl-learning-rates}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Optimiser
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Parabola
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rosenbrock
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rastrigin
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Styblinski-Tang
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Optimiser
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Parabola
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rosenbrock
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rastrigin
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Styblinski-Tang
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Newton-Raphson & 0.5 & 0.5 & 0.5 & 0.5 \\
+Gradient descent & 0.2 & 0.0001 & 0.2 & 0.2 \\
+PRS & n/a & n/a & n/a & n/a \\
+FSSRS & 0.2 & 0.2 & 0.2 & 0.2 \\
+\end{longtable}
+
+\subsection{Trial design}\label{trial-design}
+
+Each trial ran for 100 iterations. Each optimiser was run once on each
+surface. At every iteration, we recorded the best value found so far and
+the value of the current evaluation. These are shown in the performance
+and trace plots described in Section 6.
 
 \section{Analysis of Test Functions}\label{analysis-of-test-functions}
 
 We now consider the behaviour of various optimisers. We can gain an
 understanding of our optimisers by applying each optimisation routine to
-benchmark functions -- frequently referred to as `test surfaces',
+known benchmark functions -- frequently referred to as `test surfaces',
 especially in the 2-dimensional case. These test surfaces are cost
 functions with known hurdles to optimisation routines.
 
-\ldots looking at the traces they leave when tested for 100 steps on a
-2-dimensional parabolic test surface. This is a very basic test surface,
-but it will help us orient ourselves with a basic understanding of each
-of these optimisers' typical behaviour patterns. Additionally, above the
-traces, a line graph of the performance over the iterations for each
-optimiser is shown for simpler comparison.
+We shall look at the `traces' the optimisers leave when applied on a
+2-dimensional test surface for a 100-step `trial'. Each trial will start
+with a uniformly generated starting position in the lower left corner
+(\(\op{\mathcal U}{-5,-4}\) in each dimension).
 
-The coloured dots show the progression of the best point found by each
-optimiser. White crosses show each function evaluation by the optimiser.
-These will often be obscured by the coloured dots, unless the optimiser
-fails to better the optimal location in a step by large enough margin to
-be visible.
+Above the traces, a line graph (performance graph) exists to showcase
+the performance of the optimiser of interest over the course of the
+trial. The coloured line on the performance graph represents the best
+solution the optimiser has found until that point, while the grey line
+corresponds to the performance value of each function evaluation by the
+optimiser as it conducts the trial.
+
+The `trace plots' have a few features to take note of:
+
+\begin{itemize}
+\item{coloured dots} which show the progression of the best point found by each optimiser;
+\item{contour lines} which correspond to the markings on the legend beside the graph. ;
+\item{white crosses} indicating the position of each function evaluation by the optimiser. These will often be obscured by the coloured dots, unless the optimiser fails to better its best solution by a large enough margin to be visible; 
+\item{a blue cross} which indicates the starting position of the traces -- this will also be mostly obscured in these graphs;
+\item{a red cross} which indicates the global minimum of the test surface.
+\end{itemize}
 
 The following traces are also viewable as an animation! These are
 accessible in
 \href{https://github.com/m-yday/Hons2025-Project}{the Github repository for this project}.
 
-To give a point of comparison, we'll also take a look at the behaviour
-of the Newton-Raphson \& gradient descent optimisers.
+To give a point of comparison, we shall also take a look at the
+behaviour of the Newton-Raphson \& gradient descent optimisers.
+
+\subsection{Unimodal: Parabola}\label{unimodal-parabola}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/para.pdf}
+
+}
+
+\caption{\label{fig-para}The parabolic test surface.}
+
+\end{figure}%
+
+We begin with one of the simplest surfaces we can, the parabolic test
+surface (Figure~\ref{fig-para}). This is a unimodal, convex test
+surface. Its gradient and Hessian are trivial to calculate, and the
+curvature is such that the steepest descent will always take an
+optimiser directly to the centre. All of our optimisers should perform
+relatively well on this surface. We begin here since it will help us
+orient ourselves with a basic understanding of each of these optimisers'
+typical behaviour patterns from as neutral a clean slate as we can find.
 
 \begin{figure}[H]
 
@@ -837,16 +1072,16 @@ parabolic test surface with nu=0.2.}
 \end{figure}%
 
 Our Hessian- and gradient-based optimisers have both performed extremely
-well, as expected! Their traces are quite indistinguishable from one
-another. With a learning rate parameter, \(\nu = 1\), Newton-Raphson did
-outperform gradient descent by reaching the centre in just a few steps.
-But after choosing learning rate (or step size) values for each
-optimiser, as shown above in Figure~\ref{fig-newt-raph} and
-Figure~\ref{fig-grad-desc}, we end up with very similar results. Both
-methods move directly towards the minimum point at \(\left(0, 0\right)\)
-immediately, with the size of each step decreasing as the slope
-decreases. This is of course a problem extremely well-suited to such
-Hessian- and gradient-based methods.
+well, as expected! Interestingly, their traces are quite from
+indistinguishable ne another. With a learning rate parameter,
+\(\nu = 1\), Newton-Raphson did outperform gradient descent by reaching
+the centre in just a few steps. But after choosing learning rate (or
+step size) values for each optimiser, as shown above in
+Figure~\ref{fig-newt-raph} and Figure~\ref{fig-grad-desc}, we end up
+with very similar results. Both methods move directly towards the
+minimum point at \(\left(0, 0\right)\) immediately, with the size of
+each step decreasing as the slope decreases. This is of course a problem
+extremely well-suited to such Hessian- and gradient-based methods.
 
 \begin{figure}[H]
 
@@ -874,9 +1109,11 @@ not be something you could rely on over multiple runs, or multiple
 different problems. This issue only gets worse as a problem's dimensions
 increase. While PRS does have a uniform probability to reach any point
 in the search space, and does not have the issue of getting `stuck' in
-local optima, there is no guarantee of improvement as the algorithm
-runs. Improvements in this algorithm are proportional to the performance
-of the best point currently found: Let the comprehensive set of possible
+any local optima, there is no guarantee of improvement as the algorithm
+runs.
+
+Improvements in this algorithm are proportional to the performance of
+the best point currently found: Let the comprehensive set of possible
 solutions in the search space be \(U\). We can collect all possible
 solutions which perform better than the best solution found by the
 optimiser at iteration \(k\), \(x_k\), into a set, \(S\). and \(S\)
@@ -895,11 +1132,8 @@ values by percentile. And knowing how improvement is proportional to the
 an expected value or confidence interval for what percentile we could
 expect to receive after \(k\) iterations.
 
-\textless-talk about clustering?-\textgreater{}
-
-If the 80th percentile of performance does about as well as the 20th,
-that ranking improvement, which encompasses 60\% of the entire
-population, is meaningless if that 60\% improvement takes too many
+If the 80th percentile of performance performs similarly to the 20th,
+that 60\% ranking improvement is meaningless if it takes too many
 additional iterations.
 
 \begin{figure}[H]
@@ -915,6 +1149,16 @@ optimiser on a parabolic test surface with nu=0.2.}
 
 \end{figure}%
 
+Figure~\ref{fig-rand-sear} shows a very different pattern from PRS.
+FSSRS moves towards the minimum in small, regular steps. Its performance
+plot falls steadily rather than in sudden drops. The grey and coloured
+lines stay close together. This is consistent with the updating equation
+in Section 3.2.3. Each candidate point lies a fixed distance from the
+current best point. FSSRS only nears \(\left(0, 0\right)\) late in the
+trial, around iteration 85. On this surface, it is much slower than
+Newton-Raphson and gradient descent. However, through optimising the
+learning rate, much of this sluggishness could be alleviated.
+
 \subsection{Unimodal: Rosenbrock}\label{unimodal-rosenbrock}
 
 \begin{figure}[H]
@@ -929,10 +1173,12 @@ optimiser on a parabolic test surface with nu=0.2.}
 
 \end{figure}%
 
-The Rosenbrock function is a non-convex, unimodal test surface. The
-global minimum of this test surface lies in a thin, curved `valley'.
-While it is easy to find this valley, it is challenging to find the true
-minimum since the valley itself is nearly completely flat.
+The Rosenbrock function (Figure~\ref{fig-rosen}) is a non-convex,
+unimodal test surface. The global minimum of this test surface lies in a
+thin, curved `valley'. While it is easy to find the valley since the
+slopes of the function always push a minimising optimiser toward the
+valley, it is a challenging task to find the true minimum since the
+valley itself is nearly completely flat.
 
 \begin{figure}[H]
 
@@ -947,16 +1193,35 @@ Rosenbrock test surface with nu=0.5.}
 
 \end{figure}%
 
+Now comparing Figure~\ref{fig-rosen-newt-raph} and
+Figure~\ref{fig-rosen-grad-desc}, the Newton-Raphson optimiser
+distinguishes itself from gradient descent by a large margin. It was
+able to find the optimum approximately midway through this trial. Its
+performance value drops sharply within the first five iterations, having
+found the valley, though outside of the bounds of the trace plot. No new
+points appear in the trace plots during this time. The trace then enters
+from the top of the window. It follows the valley floor for most of the
+trial, heading directly toward the global minimum via the valley.
+Gradient descent (Figure~\ref{fig-rosen-grad-desc}) starts to show its
+limitations. When the slope drastically changes from relatively steep,
+to almost completely flat, gradient descent all but moves at a
+standstill. Increasing the learning rate may be the first idea an
+analyst may have to account for this, but doing so only makes the steep
+section of this surface worse. In fact, gradient descent fails to
+converge if the learning rate parameter is set slightly too high. This
+additional Hessian information allows Newton-Raphson to adjust its step
+size enough to account for this drastic change in slope.
+
 \begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-grad-desc-nu0.0002.pdf}
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rosen-grad-desc.pdf}
 
 }
 
 \caption{\label{fig-rosen-grad-desc}The gradient descent optimiser on a
-Rosenbrock test surface with nu=0.0002.}
+Rosenbrock test surface with nu=0.0001.}
 
 \end{figure}%
 
@@ -973,6 +1238,14 @@ Rosenbrock test surface.}
 
 \end{figure}%
 
+PRS finds the valley quickly on the Rosenbrock surface. Its best value
+falls within the valley, surprisingly close to zero within the first
+five iterations. After this, any improvements are too small to see on
+the performance plot. Inspecting the function evaluations through the
+grey line and white crosses shows that most evaluations perform far
+worse than the best point. It shows that PRS has a difficult time
+improving its solution when it performs well.
+
 \begin{figure}[H]
 
 \centering{
@@ -986,25 +1259,15 @@ a Rosenbrock test surface with nu=0.2.}
 
 \end{figure}%
 
-\subsection{Multimodal:
-Styblinksi-Tang}\label{multimodal-styblinksi-tang}
+FSSRS (Figure~\ref{fig-rosen-rand-sear}) shows a steady pattern similar
+to its run on the parabola. Its performance value falls smoothly. Most
+of its improvement occurs within the first 60 iterations. The trace
+moves from the lower-left corner towards the centre of the window. By
+iteration 100, it lies just below the valley, near \(X1 = 0\), having
+not reached the valley floor. Its final position is similar to that of
+gradient descent (Figure~\ref{fig-rosen-grad-desc}).
 
-\begin{figure}[H]
-
-\centering{
-
-\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang.pdf}
-
-}
-
-\caption{\label{fig-rosen}The Styblinksi-Tang test surface.}
-
-\end{figure}%
-
-The Styblinksi-Tang function is a m
-
-\subsection{Extremely Multimodal:
-Rastrigin}\label{extremely-multimodal-rastrigin}
+\subsection{Multimodal: Rastrigin}\label{multimodal-rastrigin}
 
 \begin{figure}[H]
 
@@ -1014,9 +1277,214 @@ Rastrigin}\label{extremely-multimodal-rastrigin}
 
 }
 
-\caption{\label{fig-rosen}The Rastrigin test surface.}
+\caption{\label{fig-rast}The Rastrigin test surface.}
 
 \end{figure}%
+
+We enter the space of multimodal test surfaces with the Rastrigin test
+surface (Figure~\ref{fig-rast}). This a highly multimodal surface. It
+resembles a shallow `bowl' with a regular grid of divots pushed into it.
+Each divot could trap an optimiser that simply follows the slope.
+Although, the local optima are quite close together, which could allow
+for optimisers to slowly find their way into local optima closer and
+closer to the global minimum, since it only takes a small step to find a
+potentially better solution.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rastrigin-newt-raph.pdf}
+
+}
+
+\caption{\label{fig-rast-newt-raph}The Newton-Raphson optimiser on a
+Rastrigin test surface with nu=0.5.}
+
+\end{figure}%
+
+Newton-Raphson (Figure~\ref{fig-rast-newt-raph}) does not improve on its
+starting point on the Rastrigin surface. Its best candidate solution has
+a performance of approximately 67 for the entire trial. The white cross
+shows where the optimiser settled, just above its starting point. It
+appears to converge on a separate local minimum to the position it had
+started on. This means that it was able to escape one local optimum,
+just to settle in a worse one.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rastrigin-grad-desc.pdf}
+
+}
+
+\caption{\label{fig-rast-grad-desc}The gradient descent optimiser on a
+Rastrigin test surface with nu=0.2.}
+
+\end{figure}%
+
+Gradient descent (Figure~\ref{fig-rast-grad-desc}) behaves erratically
+on the Rastrigin surface. The grey line fluctuates widely throughout the
+trial. The best candidate solution improves only a few times. The best
+points appear as separate dots rather than a connected path. It performs
+about as erratically as PRS on the parabolic surface
+(Figure~\ref{fig-pure-rs}). If we look at the y-axis of the performance
+graph, gradient descent performs far worse than any of the competing
+optimisers. Figure~\ref{fig-rast-grad-desc} and
+Figure~\ref{fig-rast-newt-raph} show how `deceptive' surfaces can make a
+seemingly stable and well-performing optimiser behave extremely poorly.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rastrigin-pure-rs.pdf}
+
+}
+
+\caption{\label{fig-rast-pure-rs}The Pure Random Search optimiser on a
+Rastrigin test surface.}
+
+\end{figure}%
+
+PRS (Figure~\ref{fig-rast-pure-rs}) draws each point independently of
+previous points (Section 3.2.3). Its best points are spread across the
+window rather than clustered near its start. Its best value falls
+sharply within the first ten iterations. It makes its last visible
+improvement around iteration 40. The best candidate solution ends near
+in one of the local minima close to the global minimum.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/rastrigin-rand-sear.pdf}
+
+}
+
+\caption{\label{fig-rast-rand-sear}The Fixed Step Size Random Search on
+a Rastrigin test surface with nu=0.2.}
+
+\end{figure}%
+
+FSSRS (Figure~\ref{fig-rast-rand-sear}) stays close to its starting
+point on the Rastrigin surface. Its best value drops sharply within the
+first few iterations. Two small improvements follow, near iterations 24
+and 32. The best value then stabilises from around iteration 32. The
+trace never leaves the corner where it started. Despite this, it still
+performs to a similar scale as Figure~\ref{fig-rast-pure-rs}. Notably
+both of the random, derivative-free methods have outperformed both of
+the derivative methods.
+
+\subsection{Multimodal:
+Styblinski-Tang}\label{multimodal-styblinski-tang}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=160mm,height=\textheight,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang.pdf}
+
+}
+
+\caption{\label{fig-styb-tang}The Styblinski-Tang test surface.}
+
+\end{figure}%
+
+The Styblinski-Tang function (Figure~\ref{fig-styb-tang}) is a
+multimodal test function which, in comparison to the Rastrigin function
+(Figure~\ref{fig-rast}), is potentially more likely to show the issues
+that come with multimodal surfaces. Since each local optimum is in a
+relatively large sector and is locally convex in these sectors,
+optimisers will have more trouble finding their way out of the incorrect
+local minimum due to their surrounding points `funnelling' them deeper
+into each divot. Small, random perturbations in the optimiser's
+algorithm might allow for jumps into nearby local optima as seen before
+in Figure~\ref{fig-rast}, but it is much harder to take a step large
+enough to escape a local optimum here.
+
+Due to the global minimum being in the bottom left, the optimisers will
+instead uniformly start at a point in the upper right.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang-newt-raph.pdf}
+
+}
+
+\caption{\label{fig-st-newt-raph}The Newton-Raphson optimiser on a
+Styblinski-Tang test surface with nu=0.5.}
+
+\end{figure}%
+
+Newton-Raphson's (Figure~\ref{fig-st-newt-raph}) best value stabilises
+at about -50 around iteration 10. It converges in the upper-right basin,
+which is the shallowest of the four. It does not reach the global
+minimum in the lower-left basin.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang-grad-desc.pdf}
+
+}
+
+\caption{\label{fig-st-grad-desc}The gradient descent optimiser on a
+Styblinski-Tang test surface with nu=0.2.}
+
+\end{figure}%
+
+Within five iterations in Figure~\ref{fig-st-grad-desc}, the gradient
+descent optimiser's performance jumps to \(10^{136}\). It stays at this
+level for the rest of the trial. The best point never moves from its
+starting position. This is likely due to having started on an
+outward-facing slope.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang-pure-rs.pdf}
+
+}
+
+\caption{\label{fig-st-pure-rs}The Pure Random Search optimiser on a
+Styblinski-Tang test surface.}
+
+\end{figure}%
+
+Of the four optimisers applied to the Styblinski-Tang surface, only PRS
+(Figure~\ref{fig-st-pure-rs}) reaches the lower-left basin. Its first
+improvement, near iteration 3, lands in the upper-right basin. Its best
+performance value then sits close to level that Newton-Raphson in
+Figure~\ref{fig-st-newt-raph} achieved. Around iteration 17, PRS samples
+a point in the lower-left basin. Its best value drops to about -75. This
+is its last visible improvement. The best point ends close to the global
+minimum.
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{Analysis of EA for Optimisation_files/mediabag/../Render/styb-tang-rand-sear.pdf}
+
+}
+
+\caption{\label{fig-st-rand-sear}The Fixed Step Size Random Search on a
+Styblinski-Tang test surface with nu=0.2.}
+
+\end{figure}%
+
+FSSRS's (Figure~\ref{fig-st-rand-sear}) best candidate solution
+stabilises at about -50 around iteration 28. Like Newton-Raphson in
+Figure~\ref{fig-st-newt-raph}, it settles in the upper-right basin. It
+takes nearly three times as many iterations to get there. This resembles
+its run on the Rastrigin surface, where it also stayed near its starting
+point.
 
 An interesting issue with drawing comparisons between GAs and
 optimisation procedures is the issue of fairly assessing the amount of
@@ -1025,8 +1493,9 @@ have with the other optimisation procedures. We would have to note how
 some procedures require more overhead for each function call, but until
 now, these overheads above the function call were not too excessive. Now
 with GAs, we have an entire population being assessed with each
-iteration. The GA package (Scrucca 2017) uses a default population size
-of 50, and throws a warning if the population size is less than 10.
+iteration. The GA package Scrucca (\citeproc{ref-scrucca2013}{2013})
+uses a default population size of 50, and throws a warning if the
+population size is less than 10.
 
 A solution to this is taking the product of the iteration number and
 population size to get a value of function calls completed by the
@@ -1034,8 +1503,8 @@ process. This does seem to be the fairest assessment method. When
 attempting this, we might use the iteration limit of 100 that we have
 currently been using, and divide that by the population size being used.
 
-Whoops. Using the default value, we've reached our maximum amount of
-function calls in two population iterations.
+Using the default value, we've reached our maximum amount of function
+calls in two population iterations.
 
 Clearly, we have not given GAs a fair chance to flex their muscles.
 There has barely been enough time for any of the `learning' that GAs are
@@ -1061,11 +1530,11 @@ principle, the probability of collisions is increased through this form
 of performance sampling. Though this does diminish quickly as the
 dimensions of the search increase.
 
-\begin{figure}
+\begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=100mm,height=\textheight,keepaspectratio]{../Render/GA_Performance.png}
+\includegraphics[width=120mm,height=\textheight,keepaspectratio]{../Render/GA_Performance.png}
 
 }
 
@@ -1074,33 +1543,96 @@ population size 50 over 100 population iterations.}
 
 \end{figure}%
 
-Clearly GAs do a pretty fine job. In just 2 population steps we had
-already had at least one full set of 10 drones successfully completing
-the course. Additionally by iteration 25, even the mean score of the
-drones is comfortably sitting at \textasciitilde8. Noting that minimum
-score possible is -10, and maximum is 10, that means we consistently
-have 9/10 drones completing the course.
+Figure~\ref{fig-ga-perf} shows GA's performance on the drone game. The
+best score reaches the maximum of 10 by generation 2. This means at
+least one candidate guided all 10 drones through the course. With a
+population of 50, this took between 51 and 100 function calls.
 
-So why have I been so negative toward GA, when its performance looks so
-promising?
-
-Well, let's consider some things that these graphs are not showing. 2
-steps means between 51-100 function calls, the GA was able to eventually
-gain its first completely successful run. This is not completely bogus,
-it's a very fair result from a direct search algorithm. This is a
-comfortable position to be in relation to RS.
-
-This took approximately \(xyz\) seconds to run. In comparison, a local
-random search algorithm takes \(zyx\) seconds. This is a \(abc\)-fold
-increase over other methods. When we compare the performance of the RS
-training of the neural network, we find that:
-
-Even if we stop the training after 25 population iterations, that is
-still 1250 function calls.
+The mean score rises more slowly. It climbs steadily until around
+generation 25. After this, it fluctuates around 8 for the rest of the
+run. A mean of 8 suggests that, on average, about 9 of 10 drones
+complete the course. These results should be read alongside their cost.
+Reaching generation 25 required 1250 function calls. This is far more
+than the 100 function calls given to each optimiser on the test
+surfaces.
 
 \section{Results}\label{results}
 
+\subsection{Unimodal surfaces}\label{unimodal-surfaces}
+
+On the parabolic surface, both Newton-Raphson and gradient descent
+perform well, moving directly towards the minimum at (0, 0). It is on
+the Rosenbrock surface that the two methods separate. Newton-Raphson
+finds the minimum at (1, 1) within the trial, following the valley floor
+for most of the way, while gradient descent remains far from the minimum
+even after 100 iterations. The two random search methods behave quite
+differently from one another. PRS makes rapid early progress on both
+surfaces, finding its best point on the parabola around iteration 18,
+and bringing its best value close to zero within the first five
+iterations on the Rosenbrock surface. After this, though, its
+improvements are too small to see. FSSRS, on the other hand, progresses
+steadily on both surfaces, but slowly. It only nears the minimum of the
+parabola around iteration 85, and does not reach the Rosenbrock valley
+floor within 100 iterations. Indeed, this is what we would expect from
+Section 1: where gradients and Hessians are informative, the methods
+which make use of them should perform best.
+
+\subsection{Multimodal surfaces}\label{multimodal-surfaces}
+
+The picture changes once we move to the multimodal surfaces, where
+neither derivative method reaches the global minimum. On the Rastrigin
+surface, Newton-Raphson does not improve on its starting point, while
+gradient descent behaves erratically, improving its best point only a
+few times. On the Styblinski-Tang surface, Newton-Raphson stabilises
+around iteration 10 in the shallow upper-right basin. Gradient descent
+fares worse still, with its performance jumping to \(10^{136}\) within
+five iterations and its best point never moving from its starting
+position. This is consistent with the concern raised in Section 1, that
+gradients and Hessians can be deceptive or misleading to an optimiser.
+FSSRS stays near its starting point on both multimodal surfaces. It
+stabilises around iteration 32 on the Rastrigin surface, and around
+iteration 28 on the Styblinski-Tang surface, where it settles in the
+same upper-right basin as Newton-Raphson at a best value of about -50.
+PRS is the only optimiser to reach the lower-left basin of the
+Styblinski-Tang surface, with its best value dropping from about -50 to
+about -75 around iteration 17. This is also its last visible
+improvement. On the Rastrigin surface, it makes its last visible
+improvement around iteration 40, ending in one of the local minima close
+to the global minimum. This is consistent with what we noted in Section
+6.1: PRS does not have the issue of getting `stuck' in local optima.
+
+\subsection{Genetic algorithms}\label{genetic-algorithms}
+
+The GA was not applied to the four test surfaces. Instead, Section 6
+considered how we might fairly compare it with the other optimisers,
+since each GA iteration evaluates an entire population. With the default
+population size of 50 in the GA package (Scrucca
+(\citeproc{ref-scrucca2013}{2013})), our budget of 100 function calls
+allows for only two generations. A more balanced setting of 10
+generations of size 10 is still restrictive, with rarer events like
+mutation only occurring about once per generation. Perhaps counting
+unique function calls is a better fit, since GAs have a tendency to
+re-evaluate well-performing solutions. The GA was, however, applied to a
+`drone game' with a population size of 50. Its best score reaches the
+maximum of 10 by generation 2, taking between 51 and 100 function calls.
+The mean score rises more slowly, climbing steadily until around
+generation 25, after which it fluctuates around 8. These results should
+be read alongside their cost though: reaching generation 25 required
+1250 function calls, far more than the 100 given to each optimiser on
+the test surfaces.
+
 \section{Conclusion}\label{conclusion}
+
+This thesis set out to ask whether real-coded GAs are more than a
+metaphor, through two sub-questions: whether an RCGA outperforms random
+search under the same budget of function evaluations, and whether its
+computational overhead is justified by its performance. We are not yet
+able to answer either. Since the GA was not tested on the same surfaces
+as random search, nor compared with random search on the drone game,
+there is no direct comparison to be made. The drone game does show us
+the cost of the GA, with 25 generations requiring 1250 function calls.
+However, without a matching result for random search, we cannot yet say
+whether this is an overpriced lunch.
 
 \newpage
 
@@ -1150,6 +1682,56 @@ print, January. \url{https://doi.org/10.1002/9780470400531.eorms0704}.
 \end{CSLReferences}
 
 \section{Bibliography}\label{bibliography}
+
+\newpage
+
+\section{Appendices}\label{appendices}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# R version 4.4.2 (2024{-}10{-}31)}
+\CommentTok{\# Platform: aarch64{-}apple{-}darwin20}
+\CommentTok{\# Running under: macOS 26.7.1}
+\CommentTok{\# }
+\CommentTok{\# Matrix products: default}
+\CommentTok{\# BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib }
+\CommentTok{\# LAPACK: /Library/Frameworks/R.framework/Versions/4.4{-}arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0}
+\CommentTok{\# }
+\CommentTok{\# locale:}
+\CommentTok{\# [1] en\_US.UTF{-}8/en\_US.UTF{-}8/en\_US.UTF{-}8/C/en\_US.UTF{-}8/en\_US.UTF{-}8}
+\CommentTok{\# }
+\CommentTok{\# time zone: Africa/Johannesburg}
+\CommentTok{\# tzcode source: internal}
+\CommentTok{\# }
+\CommentTok{\# attached base packages:}
+\CommentTok{\# [1] stats     graphics  grDevices utils     datasets  methods   base     }
+\CommentTok{\# }
+\CommentTok{\# other attached packages:}
+\CommentTok{\#  [1] progressify\_0.4.0   progressr\_1.1.0     furrr\_0.4.0        }
+\CommentTok{\#  [4] futurize\_1.1.0      future\_1.80.0       patchwork\_1.3.2    }
+\CommentTok{\#  [7] numDeriv\_2016.8{-}1.1 GA\_3.2.5            iterators\_1.0.14   }
+\CommentTok{\# [10] foreach\_1.5.2       gifski\_1.32.0{-}2     gganimate\_1.0.11   }
+\CommentTok{\# [13] lubridate\_1.9.5     forcats\_1.0.1       stringr\_1.6.0      }
+\CommentTok{\# [16] dplyr\_1.2.1         readr\_2.2.0         tidyr\_1.3.2        }
+\CommentTok{\# [19] tibble\_3.3.1        ggplot2\_4.0.3       tidyverse\_2.0.0    }
+\CommentTok{\# [22] purrr\_1.2.2        }
+\CommentTok{\# }
+\CommentTok{\# loaded via a namespace (and not attached):}
+\CommentTok{\#  [1] generics\_0.1.4     stringi\_1.8.9      listenv\_1.1.0      hms\_1.1.4         }
+\CommentTok{\#  [5] digest\_0.6.39      magrittr\_2.0.5     grid\_4.4.2         timechange\_0.4.0  }
+\CommentTok{\#  [9] RColorBrewer\_1.1{-}3 progress\_1.2.3     viridisLite\_0.4.3  scales\_1.4.0      }
+\CommentTok{\# [13] tweenr\_2.0.3       textshaping\_1.0.5  isoband\_0.3.0      codetools\_0.2{-}20  }
+\CommentTok{\# [17] cli\_3.6.6          rlang\_1.3.0        crayon\_1.5.3       parallelly\_1.48.0 }
+\CommentTok{\# [21] bit64\_4.8.6        withr\_3.0.3        tools\_4.4.2        parallel\_4.4.2    }
+\CommentTok{\# [25] tzdb\_0.5.0         globals\_0.20.0     vctrs\_0.7.3        R6\_2.6.1          }
+\CommentTok{\# [29] lifecycle\_1.0.5    bit\_4.6.0          vroom\_1.7.1        ragg\_1.5.2        }
+\CommentTok{\# [33] pkgconfig\_2.0.3    pillar\_1.11.1      gtable\_0.3.6       glue\_1.8.1        }
+\CommentTok{\# [37] Rcpp\_1.1.2         systemfonts\_1.3.2  tidyselect\_1.2.1   rstudioapi\_0.19.0 }
+\CommentTok{\# [41] farver\_2.1.2       svglite\_2.2.2      labeling\_0.4.3     compiler\_4.4.2    }
+\CommentTok{\# [45] prettyunits\_1.2.0  S7\_0.2.2   }
+\end{Highlighting}
+\end{Shaded}
+
 
 
 

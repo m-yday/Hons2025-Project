@@ -1,5 +1,3 @@
-# game params
-
 library(tidyverse)
 library(GA)
 
@@ -415,14 +413,11 @@ n_distinct <- distinct_fcalls |> count()
 # ~ 81% distinct.
 prop_distinct <- n_distinct/n_fcalls
 
- 
+
 duplicate_fcalls <- anti_join(fcalls,distinct_fcalls)
-n_duplicated <- duplicate_fcalls |> count() #issue here. TODO, figure out. Missing entries.
+n_duplicated <- duplicate_fcalls |> count() 
+#issue here: Missing entries.
 # want to inspect for patterns in duplicated function calls.
-
-
-
-
 
 n_fcalls <- fcalls |> count()
 
@@ -433,5 +428,3 @@ duplicate_fcalls <- anti_join(fcalls,distinct_fcalls)
 n_duplicated <- duplicate_fcalls |> count() 
 
 n_duplicated + n_distinct
-
-
