@@ -1,7 +1,0 @@
----
-title: "Comparison Presenation"
-format: html
----
-
-
-$$$$
