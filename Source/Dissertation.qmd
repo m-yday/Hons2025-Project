@@ -1,18 +1,25 @@
 ---
-title: "Real-coded genetic algorithms: more than metaphor?" 
-author:   
+title: "Real-coded genetic algorithms: more than metaphor?"
+author: 
   - name: "Shvet Maharaj"
-    student-id: "MHRSHV001"
+    orcid: "MHRSHV001"
+    affiliations:
+      - name: "University of Cape Town"
+        department: "Department of Statistical Sciences"
 date: last-modified
 date-format: "D MMMM YYYY"
 bibliography: references.bib
 format:
-  pdf:
+  titlepage-pdf:
+    titlepage: formal
+    titlepage-logo: "../Images/UCT_logo"
+    titlepage-theme:
+      elements: ["\\logoblock","\\titleblock", "\\authorblock", "\\dateblock", "\\vfill", "\\includegraphics{../Images/UCT_Stats}", "Department of Statistical Sciences", "University of Cape Town"]
     number-sections: true
     number-depth: 3
     pdf-engine: pdflatex
     toc: true
-    toc-depth: 4
+    toc-depth: 3
     toc-title: "Contents"
     lof: false
     lot: false
@@ -30,8 +37,8 @@ keep-tex: true
 execute:
   eval: false
 ---
+\newpage
 \tcbset{enhanced}
-\newpage 
 
 # Introduction
 
@@ -438,6 +445,8 @@ It is important to note that $\nu$ values are not directly comparable between op
 
 Each trial ran for 100 iterations. Each optimiser was run for 1000 trials on each surface, except for the GA methods, which instead had this 1000 value 'split' between a selected population size of 20 used for 50 trials. If anything, this choice benefits GA methods, since what would otherwise be 20 independent trials for other optimisers becomes information GA methods can use within each trial. At every iteration, we recorded the best fitness value found so far and the fitness value of the current evaluation, alongside the corresponding parameter values to each. These are shown in the performance and trace plots described in Section 6.
 
+\newpage
+
 # Analysis of Test Functions
 
 Now to consider the behaviour of various optimisers. An understanding of our optimisers can be gained by applying each optimisation routine to known benchmark functions -- frequently referred to as 'test surfaces', especially in the 2-dimensional case. These test surfaces are cost functions with known hurdles to optimisation routines. 
@@ -664,8 +673,7 @@ The following session information was generated through rendering the Quarto mar
 The scripts were run in the order:
 
 1. `OptAnimation.R`;
-2. `GAComparison.R`;
-3. `DroneGame.R`.
+2. `DroneGame.R`.
 
 Session Information:
 

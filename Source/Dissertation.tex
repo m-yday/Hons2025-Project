@@ -6,8 +6,7 @@
 %
 \documentclass[
   a4paper,
-  DIV=11,
-  numbers=noendperiod]{scrartcl}
+]{article}
 \usepackage{xcolor}
 \usepackage{amsmath,amssymb}
 \setcounter{secnumdepth}{3}
@@ -66,7 +65,8 @@
 \makeatother
 
 
-\usepackage{longtable,booktabs,array}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
 \newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 % Correct order of tables after \paragraph or \subparagraph
@@ -92,8 +92,6 @@
 % Set default figure placement to htbp
 \def\fps@figure{htbp}
 \makeatother
-
-
 % definitions for citeproc citations
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
@@ -128,25 +126,12 @@
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
-
-
-\setlength{\emergencystretch}{3em} % prevent overfull lines
-
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-
-
-
- 
-
-
 \usepackage{tcolorbox}
 \tcbuselibrary{skins}
 \usepackage{hyperref}
 \newcommand{\B}[1]{\boldsymbol{#1}}
 \newcommand{\+}{\phantom{-}}
 \newcommand{\op}[2]{\operatorname{#1}\left(#2\right)}
-\KOMAoption{captions}{tableheading}
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -188,6 +173,33 @@
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
+
+\usepackage{hyphenat}
+\usepackage{ifthen}
+\usepackage{calc}
+\usepackage{calculator}
+
+
+
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{afterpage}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{fadings}
+\usepackage[pagecolor=none]{pagecolor}
+
+
+% Set the titlepage font families
+
+
+
+
+
+
+
+% Set the coverpage font families
+
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
@@ -210,16 +222,149 @@
 \author{Shvet Maharaj}
 \date{23 November 2026}
 \begin{document}
-\maketitle
+%%%%% begin titlepage extension code
+
+
+\begin{titlepage}
+
+%%% TITLE PAGE START
+
+% Set up alignment commands
+%Page
+\newcommand{\titlepagepagealign}{
+\ifthenelse{\equal{center}{right}}{\raggedleft}{}
+\ifthenelse{\equal{center}{center}}{\centering}{}
+\ifthenelse{\equal{center}{left}}{\raggedright}{}
+}
+
+
+\newcommand{\titleandsubtitle}{
+% Title and subtitle
+{{\Huge{\textbf{\nohyphens{Real-coded genetic algorithms: more than
+metaphor?}}}}\par
+}%
+}
+\newcommand{\titlepagetitleblock}{
+\titleandsubtitle
+}
+
+\newcommand{\authorstyle}[1]{{\textbf{#1}}}
+
+\newcommand{\affiliationstyle}[1]{{\large{#1}}}
+
+\newcommand{\titlepageauthorblock}{
+{\authorstyle{\nohyphens{Shvet Maharaj}\\}}
+}
+
+\newcommand{\titlepageaffiliationblock}{
+\hangindent=1em
+\hangafter=1
+{\affiliationstyle{
+{1}.~University of Cape Town,~Department of Statistical Sciences
+
+
+\vspace{1\baselineskip} 
+}}
+}
+\newcommand{\headerstyled}{%
+{}
+}
+\newcommand{\footerstyled}{%
+{\Large{\textsc{}}}
+}
+\newcommand{\datestyled}{%
+{23 November 2026}
+}
+
+
+\newcommand{\titlepageheaderblock}{\headerstyled}
+
+\newcommand{\titlepagefooterblock}{
+\footerstyled
+}
+
+\newcommand{\titlepagedateblock}{
+\datestyled
+}
+
+%set up blocks so user can specify order
+\newcommand{\titleblock}{{
+
+{\titlepagetitleblock}
+}
+
+\vspace{1.5cm}
+}
+
+\newcommand{\authorblock}{{\titlepageauthorblock}
+
+\vspace{2\baselineskip}
+}
+
+\newcommand{\affiliationblock}{{\titlepageaffiliationblock}
+
+\vspace{1pt}
+}
+
+\newcommand{\logoblock}{{\includegraphics[width=0.4\textwidth]{../Images/UCT\_logo}}
+
+\vspace{1cm}
+}
+
+\newcommand{\footerblock}{}
+
+\newcommand{\dateblock}{{\titlepagedateblock}
+
+\vspace{0pt}
+}
+
+\newcommand{\headerblock}{}
+
+\thispagestyle{empty} % no page numbers on titlepages
+
+
+\newlength{\minipagewidth}
+\setlength{\minipagewidth}{\textwidth}
+\raggedright % single minipage
+% [position of box][box height][inner position]{width}
+% [s] means stretch out vertically; assuming there is a vfill
+\begin{minipage}[b][\textheight][s]{\minipagewidth}
+\titlepagepagealign
+\logoblock
+
+\titleblock
+
+\authorblock
+
+\dateblock
+
+\vfill
+
+\includegraphics{../Images/UCT_Stats}
+
+Department of Statistical Sciences
+
+University of Cape Town
+\par
+
+\end{minipage}\ifthenelse{\equal{}{right} \OR \equal{}{leftright} }{
+\hspace{\B}
+\vrulecode}{}
+\clearpage
+%%% TITLE PAGE END
+\end{titlepage}
+\setcounter{page}{1}
+
+%%%%% end titlepage extension code
 
 \renewcommand*\contentsname{Contents}
 {
-\setcounter{tocdepth}{4}
+\setcounter{tocdepth}{3}
 \tableofcontents
 }
 
-\tcbset{enhanced}
 \newpage
+\tcbset{enhanced}
 
 \section{Introduction}\label{introduction}
 
@@ -1000,6 +1145,8 @@ the current evaluation, alongside the corresponding parameter values to
 each. These are shown in the performance and trace plots described in
 Section 6.
 
+\newpage
+
 \section{Analysis of Test Functions}\label{analysis-of-test-functions}
 
 Now to consider the behaviour of various optimisers. An understanding of
@@ -1057,14 +1204,15 @@ is also accessible on Github.
 
 \end{figure}%
 
-we begin with one of the simplest surfaces we can, the parabolic test
-surface (Figure~\ref{fig-para}). This is a unimodal, convex test
-surface. Its gradient and Hessian are trivial to calculate, and the
+One of the simplest surfaces available, the parabolic test surface
+(Figure~\ref{fig-para}), is started with. This is a unimodal, convex
+test surface. Its gradient and Hessian are trivial to calculate, and the
 curvature is such that the steepest descent will always take an
-optimiser directly to the centre. All of our optimisers should perform
-relatively well on this surface. we begin here since it will help us
-orient ourselves with a basic understanding of each of these optimisers'
-typical behaviour patterns from as neutral a clean slate as we can find.
+optimiser directly to the centre. All optimisers should perform
+relatively well on this surface. This is a useful place to start since
+it will help orient oneself with a basic understanding of each of these
+optimisers' typical behaviour patterns, from as neutral a clean slate as
+possible.
 
 \begin{figure}[H]
 
@@ -1824,8 +1972,6 @@ The scripts were run in the order:
 \tightlist
 \item
   \texttt{OptAnimation.R};
-\item
-  \texttt{GAComparison.R};
 \item
   \texttt{DroneGame.R}.
 \end{enumerate}

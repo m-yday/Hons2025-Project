@@ -1,0 +1,32 @@
+$if(has-frontmatter)$
+\frontmatter
+$endif$
+$if(title)$
+\cleardoublepage
+\thispagestyle{empty}
+{\centering
+\hbox{}\vskip 0cm plus 1fill
+{\Huge\bfseries $title$ \par}
+$if(subtitle)$
+\vspace{3ex}
+{\Large\bfseries $subtitle$ \par}
+$endif$
+\vspace{12ex}
+$for(by-author)$
+{\Large\bfseries $by-author.name.literal$ \par}
+\vspace{3ex}
+{\Large $by-author.metadata.stdnum$ \par}
+\vskip 0cm plus 2fill
+{\bfseries\large $date$ \par}
+\vspace{3ex}
+$for(by-author.affiliations)$%
+$if(it.department)$%
+\centering\includegraphics{../Images/UCT_stats}
+{\bfseries\large $it.department$ \par}
+\vspace{3ex}
+$endif$%
+{\bfseries\large $it.name$ \par}
+$endfor$$endfor$%
+$endif$
+\let\mainmatterreal\mainmatter
+\let\mainmatter\relax

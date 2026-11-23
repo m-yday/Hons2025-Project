@@ -9,7 +9,6 @@ library(patchwork) # for merging multiple plots
 library(futurize)  # simple parallel processing support
 library(progressify) # simple progress reporting
 library(tictoc)    # quick benchmarking
-#library(ggnewscale)# allows for multiple colour scales on one ggplot
 
 plan(multisession)
 handlers(global=TRUE)
@@ -323,8 +322,6 @@ UPDATE_PROCEDURES <- list(
  
 # generates test surface
 generate_surface <- function(OBJ,.res=resolution){
-  base_theme <- theme_minimal() 
-  theme_set(base_theme)
   
   trace_names <- c("X1","X2","Y")
   
@@ -351,14 +348,12 @@ generate_surface <- function(OBJ,.res=resolution){
     scale_fill_viridis_c(option="E",
                          transform=OBJ$transform,breaks=OBJ$breaks
     ) + coord_fixed() + 
-    xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) # 1% expansion factor
+    xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) + # 1% expansion factor
+    theme_minimal() 
   
   return(p_obj)
 }
 generate_surface_dark <- function(OBJ,.res=resolution){
-  base_theme <- theme_minimal() 
-  theme_set(base_theme)
-  
   trace_names <- c("X1","X2","Y")
   
   xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],length.out=.res+1) #symmetric. 
@@ -385,6 +380,7 @@ generate_surface_dark <- function(OBJ,.res=resolution){
     scale_fill_viridis_c(option="E",
                          transform=OBJ$transform,breaks=OBJ$breaks
     ) + coord_fixed() + 
+    theme_minimal() +
     xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) # 1% expansion factor
   
   return(p_obj)
@@ -399,9 +395,6 @@ optim_main <- function(OBJ, UP, nu=NULL, trials=1,
   if(!is.null(nu)){
     UP$nu <- nu
   }
-  
-  base_theme <- theme_minimal() 
-  theme_set(base_theme)
   
   xseq <- seq(OBJ$bounds[1],OBJ$bounds[2],length.out=.res+1) #symmetric. 
   # geom_tile is based on the centre of the tile.
@@ -427,6 +420,7 @@ optim_main <- function(OBJ, UP, nu=NULL, trials=1,
     scale_fill_viridis_c(option="E",
                          transform=OBJ$transform,breaks=OBJ$breaks
     ) + coord_fixed() + 
+    theme_minimal() +
     xlim(OBJ$bounds*1.01) +ylim(OBJ$bounds*1.01) # 1% expansion factor
   
   # generate trace
@@ -509,8 +503,8 @@ optim_main <- function(OBJ, UP, nu=NULL, trials=1,
     labs(y="Y", x="Iteration",
          title= sprintf(
            "Behaviour of the %s optimiser on %s surface.",
-           UP$plot_name, OBJ$plot_name))+ 
-    theme_bw() 
+           UP$plot_name, OBJ$plot_name))+
+    theme_minimal()
   
   p_full <- p_performance/p_static +
     plot_layout(heights=unit(c(25,1),c('mm','null')))
@@ -652,17 +646,17 @@ generate_trace_base <- function(obj, up, nu=NULL, trials=1,
 }
 
 # clears trace file.
-init_print_monitor <- function(){
-  unlink(x="../Populations/ga_trace.csv")
-}
+# init_print_monitor <- function(){
+#   unlink(x="../Populations/ga_trace.csv")
+# }
 
 # custom monitor to print population to file
-print_monitor <- function(ga_model){
-  # print all populations to file, includes the iteration it was generated in
-  bind_cols(Pop_Iteration=ga_model@iter,as_tibble(ga_model@population)) |> 
-    write_csv(file="../Populations/ga_trace.csv",append=TRUE)
-  #print(paste("Population iteration:", ga_model@iter))
-}
+# print_monitor <- function(ga_model){
+#   # print all populations to file, includes the iteration it was generated in
+#   bind_cols(Pop_Iteration=ga_model@iter,as_tibble(ga_model@population)) |> 
+#     write_csv(file="../Populations/ga_trace.csv",append=TRUE)
+#   #print(paste("Population iteration:", ga_model@iter))
+# }
 
 init_global_store_monitor <- function(){
   ga_trace <<- new_tibble(x= list(iteration=vector(mode="integer",length=0), 
@@ -939,28 +933,9 @@ plot_trace <- function(trace,
     facet_wrap(facets=~facet,nrow=2,
                labeller = as_labeller(facet_names))+
     labs(colour="Iteration",
-         subtitle=trace_subtitle)
+         subtitle=trace_subtitle) +
+    theme(strip.background = element_rect(fill="lightgrey",colour="#00000000"))
   
-  # p_performance_simple <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
-  #   stat_summary(geom="ribbon",
-  #                fun.min=min,fun.max=max,
-  #                fill = 'black',alpha=0.5)+
-  #   stat_summary(geom="ribbon",
-  #                fun.min=min,fun.max=max,
-  #                aes(fill = iteration),alpha=0.5,show.legend = FALSE)+
-  #   stat_summary(geom="line",fun=min, colour='darkblue', alpha=0.5,aes(linetype="min"))+
-  #   scale_y_log10()+
-  #   scale_fill_viridis_c(option="H",begin=0.3,end=0.9) +
-  #   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
-  #   labs(y="Y", x="Iteration",
-  #        title= perf_title,
-  #        subtitle= perf_subtitle)+ 
-  #   #theme_bw() +
-  #   guides(linetype=guide_legend(
-  #     title="",
-  #     theme=theme(legend.key=element_rect(fill="grey",colour="#00000000"))))+
-  #   scale_linetype_manual(values=c("min"=1))
-  # 
   p_performance <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
     stat_summary(geom="ribbon",
                  fun.min=min,fun.max=max,
@@ -983,10 +958,10 @@ plot_trace <- function(trace,
     labs(y="Y", x="Iteration",
          title   = perf_title,
          subtitle= perf_subtitle)+ 
-    #theme_bw()+
+    theme_minimal() +
     guides(linetype=guide_legend(
       title="",
-      theme=theme(legend.key = element_rect(fill="grey",colour="#00000000"))))+
+      theme=theme(legend.key = element_rect(fill="lightgrey",colour="#00000000"))))+
     scale_linetype_manual(breaks=c("max","q3","median","q1","min"),
                           values=c("max"   =1,
                                    "q3"    =3,
@@ -994,21 +969,42 @@ plot_trace <- function(trace,
                                    "q1"    =3,
                                    "min"   =1))
   
-  # p_full_simple <- p_performance_simple/p_static +
-  #   plot_layout(heights=unit(c(25,1),c('mm','null')))
-  # 
   p_full <- p_performance/p_static +
     plot_layout(heights=unit(c(25,1),c('mm','null')))
-  
-  # ggsave(plot=p_full_simple,
-  #        filename = sprintf("../Render/%s-%s-simple.pdf",
-  #                           obj$file_prefix, up$optim_name),
-  #        width=180, height=150, units="mm", dpi=400)
   
   ggsave(plot=p_full,
          filename = sprintf("../Render/%s-%s.pdf",
                             obj$file_prefix, up$optim_name),
          width=180, height=150, units="mm", dpi=400)
+  
+  # DEPRECATED
+  # p_performance_simple <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
+  #   stat_summary(geom="ribbon",
+  #                fun.min=min,fun.max=max,
+  #                fill = 'black',alpha=0.5)+
+  #   stat_summary(geom="ribbon",
+  #                fun.min=min,fun.max=max,
+  #                aes(fill = iteration),alpha=0.5,show.legend = FALSE)+
+  #   stat_summary(geom="line",fun=min, colour='darkblue', alpha=0.5,aes(linetype="min"))+
+  #   scale_y_log10()+
+  #   scale_fill_viridis_c(option="H",begin=0.3,end=0.9) +
+  #   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+  #   labs(y="Y", x="Iteration",
+  #        title= perf_title,
+  #        subtitle= perf_subtitle)+ 
+  #   #theme_bw() +
+  #   guides(linetype=guide_legend(
+  #     title="",
+  #     theme=theme(legend.key=element_rect(fill="grey",colour="#00000000"))))+
+  #   scale_linetype_manual(values=c("min"=1))
+  # 
+  # p_full_simple <- p_performance_simple/p_static +
+  #   plot_layout(heights=unit(c(25,1),c('mm','null')))
+  #
+  # ggsave(plot=p_full_simple,
+  #        filename = sprintf("../Render/%s-%s-simple.pdf",
+  #                           obj$file_prefix, up$optim_name),
+  #        width=180, height=150, units="mm", dpi=400)
   
   if(!animate){
     return(list(plot= p_full,
@@ -1038,20 +1034,6 @@ plot_trace <- function(trace,
               perf= p_performance,
               anim= p_anim))
 }
-
-
-# plot_trace <- function(trace,
-#                        res=resolution,
-#                        surface=NULL,
-#                        segments= c(1,2,5,10,50,100),
-#                        trial_plotted=NULL,
-#                        animate=FALSE){
-#   
-#   if(trace$up$is_ga) {
-#     return(plot_trace_ga(trace,res,surface,segments,trial_plotted,animate))
-#   }
-#   return(plot_trace_base(trace,res,surface,segments,trial_plotted,animate))
-# }
 
 #-#-# #-#-# #-#-# #-#-# #          RUN        # #-#-# #-#-# #-#-# #-#-#
 
@@ -1182,6 +1164,7 @@ minimums <- all_traces |> summarise(Y=quantile(MinY,probs=0.05),.by=c(obj,up)) |
 p_all_trace <- all_traces |>
   filter(up != "grad-desc",up != "newt-raph") |>
   ggplot(aes(x=iteration, y=MinY)) +
+  theme_minimal() +
   # stat_summary(geom="ribbon",
   #              fun.min=min,fun.max=max,
   #              fill = 'black',alpha=0.05)+
@@ -1246,3 +1229,4 @@ Dotted line shows 5th percentile of the best Y value.")+
 ggsave(plot=p_all_trace,
        filename = "../Render/all_trace.pdf",
        width=180, height=150, units="mm", dpi=400)
+
