@@ -385,11 +385,26 @@ Crossover and mutation operations intend to increase diversity in a population, 
 
 ## Software and reproducibility
 
-The trials in this paper were conducted using R, with figures generated in `OptAnimation.R`, and `DroneGame.R`. Theses scripts, alongside the `sessionInfo()` of the machine, can be found in the appendices. Genetic algorithms were implemented using version 3.2.5 of the `GA` package (@scrucca2013). A seed of 111 was set prior to running the trials. With the `futurize` package and the option `seed = TRUE` set, we can ensures reproducibility of the results while allowing for parallel processing. 
+The trials in this paper were conducted using R, with figures generated in `OptAnimation.R`, and `DroneGame.R`. These scripts, alongside the `sessionInfo()` of the machine, can be found in the appendices. Genetic algorithms were implemented using version 3.2.5 of the `GA` package. A seed of $111$ was set prior to running the trials.
+
+The following packages were used:
+
+- `tidyverse` (@tidyverse); 
+- `gganimate` (@gganimate);
+- `gifski` (@gifski); 
+- `GA` (@scrucca2013, @ga2017);
+- `numDeriv` (@numDeriv); 
+- `patchwork` (@patchwork);
+- `future` & `futurize` (@future, @futurize);
+- `progressify` (@progressify);
+- `tictoc` (@tictoc).
+
 
 ## Test surfaces
 
 Each optimiser was applied to four 2-dimensional test surfaces. These are cost functions with known hurdles to optimisation routines. Two are unimodal: the parabolic and the Rosenbrock function. Two are multimodal: the Rastrigin and Styblinski-Tang functions. This lets us compare behaviour between simple surfaces against surfaces with many local minima. Each surface was searched over the range $\left(-5,5\right)$ in both dimensions. Table 1 summarises each surface.
+
+Note that the Styblinski-Tang function has been modified with a constant of $~78.3$ added to ensure all values are positive. This is due to the GA methods strange performance in some cases when values were allowed to be negative.
 
 
 | Surface         | Type       | Global Min | Formula                       |
@@ -397,37 +412,37 @@ Each optimiser was applied to four 2-dimensional test surfaces. These are cost f
 | Parabola        | Unimodal   | (0,0)      | $\sum_{i=1}^2 x_i^2$          |
 | Rosenbrock      | Unimodal   | (1,1)      | $\left(100*(x_{2}-x_1^2)^2+(1-x_1)^2 \right)$|
 | Rastrigin       | Multimodal | (0,0)      | $20+\sum^2_{i=1}\left(x^2_i-10\cos\left(2\pi x_i\right)\right)$|
-| Styblinski-Tang | Multimodal |~(-2.9,-2.9)| $\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i$|
+| Styblinski-Tang | Multimodal |~(-2.9,-2.9)| $\left(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\right) +78.33234$|
 
-: Test surfaces and their global minima. {#tbl-surfaces}
+: Test surfaces and the positions of their global minima. {#tbl-surfaces}
 
 
 ## Optimisers and settings
 
 Four optimisers were compared on the test surfaces. Newton-Raphson and gradient descent serve as points of comparison. PRS and FSSRS are direct search methods, and so are GA’s closest competitors. Their updating equations are given in Section 3.2.
 FSSRS uses the strictly improving update procedure from Section 3.1. PRS, Newton-Raphson and gradient descent use the direct update procedure. (It should be noted though that PRS completely disregards the previous position,  $\B x$,  it was given, so its updating procedure is irrelevant.)  Gradients and Hessians were approximated numerically using the `numDeriv` package.
-Table 2 shows the learning rate, $\nu$, used for each optimiser on each surface. Default $\nu$ values for each optimiser were selected through trial and error on the parabolic test surface. Where necessary, the defaults could be overwritten to ensure the plot traces converged.
+Table 2 shows the learning rate, $\nu$, used for each optimiser on each surface. The $\nu$ values for each optimiser were selected through trial and error on each surface. For the PRS optimiser there is no applicable method to apply a learning rate since it samples an independent point on any surface. Newton-Raphson practically applies its own dynamic step sizing, so there is not a need to adjust it by any factor. This was also found through trial and error testing as well, where a $\nu$ value of $1$ performed best. The GA methods do not have a typical method to apply a learning rate parameter, and it can be conceived that the learning rate is instead managed through selection of crossover methods, as well as fine tuning of the GA parameters.
 It is important to note that $\nu$ values are not directly comparable between optimisers, since the optimisers are not normalised against each another in terms of how they traverse surfaces.
 
 
 | Optimiser        | Parabola | Rosenbrock | Rastrigin | Styblinski-Tang |
 |------------------|----------|------------|-----------|-----------------|
-| Newton-Raphson   | 0.5      | 0.5        | 0.5       | 0.5             |
-| Gradient descent | 0.2      | 0.0001     | 0.2       | 0.2             |
+| Newton-Raphson   | 1        | 1          | 1         | 1               |
+| Gradient descent | 0.1      | 0.0001     | 0.04      | 0.03            |
 | PRS              | n/a      | n/a        | n/a       | n/a             |
-| FSSRS            | 0.2      | 0.2        | 0.2       | 0.2             |
+| FSSRS            | 0.4      | 0.4        | 1         | 0.3             |
 
 : Learning rate ($\nu$) for each optimiser and surface. {#tbl-learning-rates}
 
 ## Trial design
 
-Each trial ran for 100 iterations. Each optimiser was run once on each surface. At every iteration, we recorded the best value found so far and the value of the current evaluation. These are shown in the performance and trace plots described in Section 6.
+Each trial ran for 100 iterations. Each optimiser was run for 1000 trials on each surface, except for the GA methods, which instead had this 1000 value 'split' between a selected population size of 20 used for 50 trials. If anything, this choice benefits GA methods, since what would otherwise be 20 independent trials for other optimisers becomes information GA methods can use within each trial. At every iteration, we recorded the best fitness value found so far and the fitness value of the current evaluation, alongside the corresponding parameter values to each. These are shown in the performance and trace plots described in Section 6.
 
 # Analysis of Test Functions
 
-we now consider the behaviour of various optimisers. we can gain an understanding of our optimisers by applying each optimisation routine to known benchmark functions -- frequently referred to as 'test surfaces', especially in the 2-dimensional case. These test surfaces are cost functions with known hurdles to optimisation routines. 
+Now to consider the behaviour of various optimisers. An understanding of our optimisers can be gained by applying each optimisation routine to known benchmark functions -- frequently referred to as 'test surfaces', especially in the 2-dimensional case. These test surfaces are cost functions with known hurdles to optimisation routines. 
 
-we shall look at the 'traces' the optimisers leave when applied on a 2-dimensional test surface for a 100-step 'trial'. Each trial will start with a uniformly generated starting position in the lower left corner ($\op{\mathcal U}{-5,-4}$ in each dimension).
+The 'traces' the optimisers leave when applied on a 2-dimensional test surface for a 100-step 'trial' can be examined for a sense of their 'behaviour'. Each trial will start with a uniformly generated starting position over the bounds of the objective function.
 
 Above the traces, a line graph (performance graph) exists to showcase the performance of the optimiser of interest over the course of the trial. 
 The coloured line on the performance graph represents the best solution the optimiser has found until that point, while the grey line corresponds to the performance value of each function evaluation by the optimiser as it conducts the trial.
@@ -435,11 +450,10 @@ The coloured line on the performance graph represents the best solution the opti
 The 'trace plots' have a few features to take note of:
 
 \begin{itemize}
-\item{coloured dots} which show the progression of the best point found by each optimiser;
-\item{contour lines} which correspond to the markings on the legend beside the graph. ;
-\item{white crosses} indicating the position of each function evaluation by the optimiser. These will often be obscured by the coloured dots, unless the optimiser fails to better its best solution by a large enough margin to be visible; 
-\item{a blue cross} which indicates the starting position of the traces -- this will also be mostly obscured in these graphs;
-\item{a red cross} which indicates the global minimum of the test surface.
+\item{contour lines} which correspond to the tick marks on the legend beside the graph;
+\item{a red cross} which indicates the global minimum of the test surface;
+\item{a swarm of small, coloured dots} which shows the positions under evaluation by the optimiser at each trial step. For instance, the '1 Step' trace plot shows all randomly generated *starting* positions, and the '50 Steps' trace plot shows the positions being evaluated halfway through the trial. To ensure these 'swarms' are visible, the surface background is darkened;
+\item{larger, coloured rings} which correspond to the trace of the *best* performing trial. This allows us to examine the progression of the best solution found. The colour of the rings and aforementioned swarm of dots correspond to the iteration at which they were evaluated.
 \end{itemize}
 
 The following traces are also viewable as an animation! These are accessible in \href{https://github.com/m-yday/Hons2025-Project}{the Github repository for this project}.

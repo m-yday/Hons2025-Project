@@ -208,7 +208,7 @@
 
 \title{Real-coded genetic algorithms: more than metaphor?}
 \author{Shvet Maharaj}
-\date{19 November 2026}
+\date{23 November 2026}
 \begin{document}
 \maketitle
 
@@ -825,14 +825,40 @@ of increased fitness (exploitation).
 reproducibility}\label{software-and-reproducibility}
 
 The trials in this paper were conducted using R, with figures generated
-in \texttt{OptAnimation.R}, and \texttt{DroneGame.R}. Theses scripts,
+in \texttt{OptAnimation.R}, and \texttt{DroneGame.R}. These scripts,
 alongside the \texttt{sessionInfo()} of the machine, can be found in the
 appendices. Genetic algorithms were implemented using version 3.2.5 of
-the \texttt{GA} package (Scrucca (\citeproc{ref-scrucca2013}{2013})). A
-seed of 111 was set prior to running the trials. With the
-\texttt{futurize} package and the option \texttt{seed\ =\ TRUE} set, we
-can ensures reproducibility of the results while allowing for parallel
-processing.
+the \texttt{GA} package. A seed of \(111\) was set prior to running the
+trials.
+
+The following packages were used:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{tidyverse} (Wickham et al. (\citeproc{ref-tidyverse}{2019}));
+\item
+  \texttt{gganimate} (Pedersen and Robinson
+  (\citeproc{ref-gganimate}{2025}));
+\item
+  \texttt{gifski} (Ooms et al. (\citeproc{ref-gifski}{2025}));
+\item
+  \texttt{GA} (Scrucca (\citeproc{ref-scrucca2013}{2013}), Scrucca
+  (\citeproc{ref-ga2017}{2017}));
+\item
+  \texttt{numDeriv} (Gilbert and Varadhan
+  (\citeproc{ref-numDeriv}{2019}));
+\item
+  \texttt{patchwork} (Pedersen (\citeproc{ref-patchwork}{2025}));
+\item
+  \texttt{future} \& \texttt{futurize} (Bengtsson
+  (\citeproc{ref-future}{2021}), Bengtsson
+  (\citeproc{ref-futurize}{2026a}));
+\item
+  \texttt{progressify} (Bengtsson (\citeproc{ref-progressify}{2026b}));
+\item
+  \texttt{tictoc} (Izrailev (\citeproc{ref-tictoc}{2024})).
+\end{itemize}
 
 \subsection{Test surfaces}\label{test-surfaces}
 
@@ -844,12 +870,17 @@ behaviour between simple surfaces against surfaces with many local
 minima. Each surface was searched over the range \(\left(-5,5\right)\)
 in both dimensions. Table 1 summarises each surface.
 
+Note that the Styblinski-Tang function has been modified with a constant
+of \(~78.3\) added to ensure all values are positive. This is due to the
+GA methods strange performance in some cases when values were allowed to
+be negative.
+
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2361}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.4306}}@{}}
-\caption{Test surfaces and their global
+\caption{Test surfaces and the positions of their global
 minima.}\label{tbl-surfaces}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
@@ -883,7 +914,7 @@ Rosenbrock & Unimodal & (1,1) &
 Rastrigin & Multimodal & (0,0) &
 \(20+\sum^2_{i=1}\left(x^2_i-10\cos\left(2\pi x_i\right)\right)\) \\
 Styblinski-Tang & Multimodal & \textasciitilde(-2.9,-2.9) &
-\(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\) \\
+\(\left(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\right) +78.33234\) \\
 \end{longtable}
 
 \subsection{Optimisers and settings}\label{optimisers-and-settings}
@@ -898,9 +929,16 @@ PRS completely disregards the previous position, \(\B x\), it was given,
 so its updating procedure is irrelevant.) Gradients and Hessians were
 approximated numerically using the \texttt{numDeriv} package. Table 2
 shows the learning rate, \(\nu\), used for each optimiser on each
-surface. Default \(\nu\) values for each optimiser were selected through
-trial and error on the parabolic test surface. Where necessary, the
-defaults could be overwritten to ensure the plot traces converged. It is
+surface. The \(\nu\) values for each optimiser were selected through
+trial and error on each surface. For the PRS optimiser there is no
+applicable method to apply a learning rate since it samples an
+independent point on any surface. Newton-Raphson practically applies its
+own dynamic step sizing, so there is not a need to adjust it by any
+factor. This was also found through trial and error testing as well,
+where a \(\nu\) value of \(1\) performed best. The GA methods do not
+have a typical method to apply a learning rate parameter, and it can be
+conceived that the learning rate is instead managed through selection of
+crossover methods, as well as fine tuning of the GA parameters. It is
 important to note that \(\nu\) values are not directly comparable
 between optimisers, since the optimisers are not normalised against each
 another in terms of how they traverse surfaces.
@@ -943,31 +981,37 @@ Styblinski-Tang
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Newton-Raphson & 0.5 & 0.5 & 0.5 & 0.5 \\
-Gradient descent & 0.2 & 0.0001 & 0.2 & 0.2 \\
+Newton-Raphson & 1 & 1 & 1 & 1 \\
+Gradient descent & 0.1 & 0.0001 & 0.04 & 0.03 \\
 PRS & n/a & n/a & n/a & n/a \\
-FSSRS & 0.2 & 0.2 & 0.2 & 0.2 \\
+FSSRS & 0.4 & 0.4 & 1 & 0.3 \\
 \end{longtable}
 
 \subsection{Trial design}\label{trial-design}
 
-Each trial ran for 100 iterations. Each optimiser was run once on each
-surface. At every iteration, we recorded the best value found so far and
-the value of the current evaluation. These are shown in the performance
-and trace plots described in Section 6.
+Each trial ran for 100 iterations. Each optimiser was run for 1000
+trials on each surface, except for the GA methods, which instead had
+this 1000 value `split' between a selected population size of 20 used
+for 50 trials. If anything, this choice benefits GA methods, since what
+would otherwise be 20 independent trials for other optimisers becomes
+information GA methods can use within each trial. At every iteration, we
+recorded the best fitness value found so far and the fitness value of
+the current evaluation, alongside the corresponding parameter values to
+each. These are shown in the performance and trace plots described in
+Section 6.
 
 \section{Analysis of Test Functions}\label{analysis-of-test-functions}
 
-we now consider the behaviour of various optimisers. we can gain an
-understanding of our optimisers by applying each optimisation routine to
+Now to consider the behaviour of various optimisers. An understanding of
+our optimisers can be gained by applying each optimisation routine to
 known benchmark functions -- frequently referred to as `test surfaces',
 especially in the 2-dimensional case. These test surfaces are cost
 functions with known hurdles to optimisation routines.
 
-we shall look at the `traces' the optimisers leave when applied on a
-2-dimensional test surface for a 100-step `trial'. Each trial will start
-with a uniformly generated starting position in the lower left corner
-(\(\op{\mathcal U}{-5,-4}\) in each dimension).
+The `traces' the optimisers leave when applied on a 2-dimensional test
+surface for a 100-step `trial' can be examined for a sense of their
+`behaviour'. Each trial will start with a uniformly generated starting
+position over the bounds of the objective function.
 
 Above the traces, a line graph (performance graph) exists to showcase
 the performance of the optimiser of interest over the course of the
@@ -979,11 +1023,10 @@ optimiser as it conducts the trial.
 The `trace plots' have a few features to take note of:
 
 \begin{itemize}
-\item{coloured dots} which show the progression of the best point found by each optimiser;
-\item{contour lines} which correspond to the markings on the legend beside the graph. ;
-\item{white crosses} indicating the position of each function evaluation by the optimiser. These will often be obscured by the coloured dots, unless the optimiser fails to better its best solution by a large enough margin to be visible; 
-\item{a blue cross} which indicates the starting position of the traces -- this will also be mostly obscured in these graphs;
-\item{a red cross} which indicates the global minimum of the test surface.
+\item{contour lines} which correspond to the tick marks on the legend beside the graph;
+\item{a red cross} which indicates the global minimum of the test surface;
+\item{a swarm of small, coloured dots} which shows the positions under evaluation by the optimiser at each trial step. For instance, the '1 Step' trace plot shows all randomly generated *starting* positions, and the '50 Steps' trace plot shows the positions being evaluated halfway through the trial. To ensure these 'swarms' are visible, the surface background is darkened;
+\item{larger, coloured rings} which correspond to the trace of the *best* performing trial. This allows us to examine the progression of the best solution found. The colour of the rings and aforementioned swarm of dots correspond to the iteration at which they were evaluated.
 \end{itemize}
 
 The following traces are also viewable as an animation! These are
@@ -1658,6 +1701,21 @@ Aranha, Claus, Christian Camacho, Felipe Campelo, et al. 2021.
 Room.''} \emph{Swarm Intelligence} 16 (November).
 \url{https://doi.org/10.1007/s11721-021-00202-9}.
 
+\bibitem[\citeproctext]{ref-future}
+Bengtsson, Henrik. 2021. {``A Unifying Framework for Parallel and
+Distributed Processing in r Using Futures.''} \emph{The R Journal} 13
+(2): 208--27. \url{https://doi.org/10.32614/RJ-2021-048}.
+
+\bibitem[\citeproctext]{ref-futurize}
+Bengtsson, Henrik. 2026a. \emph{A Unified Approach to Concurrent,
+Parallel Map-Reduce in r Using Futures}.
+\url{https://arxiv.org/abs/2601.17578}.
+
+\bibitem[\citeproctext]{ref-progressify}
+Bengtsson, Henrik. 2026b. \emph{Progressify: Progress Reporting of
+Common Functions via One Magic Function}.
+\url{https://CRAN.R-project.org/package=progressify}.
+
 \bibitem[\citeproctext]{ref-chaudhary2026}
 Chaudhary, Reshu, Pooja Verma, Rohit Salgotra, and Amir H. Gandomi.
 2026. {``Five Decades of Genetic Algorithms: A Systematic and
@@ -1665,15 +1723,39 @@ Bibliometric Review (1975--2025).''} \emph{Archives of Computational
 Methods in Engineering}, ahead of print.
 \url{https://doi.org/10.1007/s11831-025-10487-2}.
 
+\bibitem[\citeproctext]{ref-numDeriv}
+Gilbert, Paul, and Ravi Varadhan. 2019. \emph{numDeriv: Accurate
+Numerical Derivatives}.
+\url{https://CRAN.R-project.org/package=numDeriv}.
+
 \bibitem[\citeproctext]{ref-holland1975}
 Holland, John H. 1975. \emph{{Adaptation in Natural and Artificial
 Systems}}. University of Michigan Press.
 \url{https://doi.org/10.7551/mitpress/1090.001.0001}.
 
+\bibitem[\citeproctext]{ref-tictoc}
+Izrailev, Sergei. 2024. \emph{Tictoc: Functions for Timing r Scripts, as
+Well as Implementations of "Stack" and "StackList" Structures}.
+\url{https://CRAN.R-project.org/package=tictoc}.
+
 \bibitem[\citeproctext]{ref-marsaglia1972}
 Marsaglia, George. 1972. {``Choosing a Point from the Surface of a
 Sphere.''} \emph{The Annals of Mathematical Statistics} 43 (2): 645--46.
 \url{https://doi.org/10.1214/aoms/1177692644}.
+
+\bibitem[\citeproctext]{ref-gifski}
+Ooms, Jeroen, Kornel Lesiński, and Authors of the dependency Rust
+crates. 2025. \emph{Gifski: Highest Quality GIF Encoder}.
+\url{https://CRAN.R-project.org/package=gifski}.
+
+\bibitem[\citeproctext]{ref-patchwork}
+Pedersen, Thomas Lin. 2025. \emph{Patchwork: The Composer of Plots}.
+\url{https://CRAN.R-project.org/package=patchwork}.
+
+\bibitem[\citeproctext]{ref-gganimate}
+Pedersen, Thomas Lin, and David Robinson. 2025. \emph{Gganimate: A
+Grammar of Animated Graphics}.
+\url{https://CRAN.R-project.org/package=gganimate}.
 
 \bibitem[\citeproctext]{ref-rastrigin1963}
 Rastrigin, L. A. 1963. {``The Convergence of the Random Search Method in
@@ -1685,6 +1767,16 @@ Remote Control} 24: 1337--42.
 Scrucca, Luca. 2013. {``{\textbf{GA}}: A Package for Genetic Algorithms
 in{\emph{R}}.''} \emph{Journal of Statistical Software} 53 (4).
 \url{https://doi.org/10.18637/jss.v053.i04}.
+
+\bibitem[\citeproctext]{ref-ga2017}
+Scrucca, Luca. 2017. {``On Some Extensions to {GA} Package: Hybrid
+Optimisation, Parallelisation and Islands Evolution.''} \emph{The R
+Journal} 9 (1): 187--206. \url{https://doi.org/10.32614/RJ-2017-008}.
+
+\bibitem[\citeproctext]{ref-tidyverse}
+Wickham, Hadley, Mara Averick, Jennifer Bryan, et al. 2019. {``Welcome
+to the {tidyverse}.''} \emph{Journal of Open Source Software} 4 (43):
+1686. \url{https://doi.org/10.21105/joss.01686}.
 
 \bibitem[\citeproctext]{ref-zabinsky2011}
 Zabinsky, Zelda B. 2011. {``Random Search Algorithms.''} \emph{Wiley
