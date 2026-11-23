@@ -407,12 +407,12 @@ Each optimiser was applied to four 2-dimensional test surfaces. These are cost f
 Note that the Styblinski-Tang function has been modified with a constant of $~78.3$ added to ensure all values are positive. This is due to the GA methods strange performance in some cases when values were allowed to be negative.
 
 
-| Surface         | Type       | Global Min | Formula                       |
-|-----------------|------------|------------|-------------------------------|
-| Parabola        | Unimodal   | (0,0)      | $\sum_{i=1}^2 x_i^2$          |
-| Rosenbrock      | Unimodal   | (1,1)      | $\left(100*(x_{2}-x_1^2)^2+(1-x_1)^2 \right)$|
-| Rastrigin       | Multimodal | (0,0)      | $20+\sum^2_{i=1}\left(x^2_i-10\cos\left(2\pi x_i\right)\right)$|
-| Styblinski-Tang | Multimodal |~(-2.9,-2.9)| $\left(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\right) +78.33234$|
+|Surface        |Type      |Global Min| Formula                           |
+|---------------|----------|----------|-----------------------------------|
+|Parabola       |Unimodal  |(0,0)     | $\sum_{i=1}^2 x_i^2$              |
+|Rosenbrock     |Unimodal  |(1,1)     | $\left(100*(x_{2}-x_1^2)^2+(1-x_1)^2 \right)$|
+|Rastrigin      |Multimodal|(0,0)     | $20+\sum^2_{i=1}\left(x^2_i-10\cos\left(2\pi x_i\right)\right)$|
+|Styblinski-Tang|Multimodal|~(-2.9,-2.9)| $\left(\frac12\sum^2_{i=1}x_i^4-16x_i^2+5x_i\right) +78.33234$|
 
 : Test surfaces and the positions of their global minima. {#tbl-surfaces}
 
@@ -460,19 +460,21 @@ The following traces are also viewable as an animation! These are accessible in 
 
 To give a point of comparison, we shall also take a look at the behaviour of the Newton-Raphson & gradient descent optimisers.
 
+For the GA traces, since five methods are being tested which generate incredibly similar plots, only a single trace plot will be shown to represent their performance on each surface. The remainder of the plots will still undergo analysis alongside the shown plot. The \href{https://github.com/m-yday/Hons2025-Project/tree/main/Render}{full list of figures} is also accessible on Github.
+
 ## Unimodal: Parabola
 
-![The parabolic test surface.](../Render/para.pdf){#fig-para width="160mm" fig-pos='H'}
+![The parabolic test surface.](../Render/para.pdf){#fig-para width="170mm" fig-pos='H'}
 
-we begin with one of the simplest surfaces we can, the parabolic test surface (@fig-para). This is a unimodal, convex test surface. Its gradient and Hessian are trivial to calculate, and the curvature is such that the steepest descent will always take an optimiser directly to the centre. All of our optimisers should perform relatively well on this surface. we begin here since it will help us orient ourselves with a basic understanding of each of these optimisers' typical behaviour patterns from as neutral a clean slate as we can find. 
+One of the simplest surfaces available, the parabolic test surface (@fig-para), is started with. This is a unimodal, convex test surface. Its gradient and Hessian are trivial to calculate, and the curvature is such that the steepest descent will always take an optimiser directly to the centre. All optimisers should perform relatively well on this surface. This is a useful place to start since it will help orient oneself with a basic understanding of each of these optimisers' typical behaviour patterns, from as neutral a clean slate as possible. 
 
-![The Newton-Raphson optimiser on a parabolic test surface with nu=0.5.](../Render/para-newt-raph.pdf){#fig-newt-raph height="160mm" fig-pos='H'}
+![The Newton-Raphson optimiser on a parabolic test surface with $\nu=1$.](../Render/para-newt-raph.pdf){#fig-newt-raph height="170mm" fig-pos='H'}
 
-![The gradient descent optimiser on a parabolic test surface with nu=0.2.](../Render/para-grad-desc.pdf){#fig-grad-desc height="160mm" fig-pos='H'}
+![The gradient descent optimiser on a parabolic test surface with $\nu=0.1$.](../Render/para-grad-desc.pdf){#fig-grad-desc height="170mm" fig-pos='H'}
 
-Our Hessian- and gradient-based optimisers have both performed extremely well, as expected! Interestingly, their traces are quite from indistinguishable ne another. With a learning rate parameter, $\nu = 1$, Newton-Raphson did outperform gradient descent by reaching the centre in just a few steps. But after choosing learning rate (or step size) values for each optimiser, as shown above in @fig-newt-raph and @fig-grad-desc, we end up with very similar results.  Both methods move directly towards the minimum point at $\left(0, 0\right)$ immediately, with the size of each step decreasing as the slope decreases. This is of course a problem extremely well-suited to such Hessian- and gradient-based methods.
+Our Hessian- and gradient-based optimisers have both performed extremely well, as expected! Interestingly, their traces are quite indistinguishable from one another. With a learning rate parameter, $\nu = 1$, Newton-Raphson did outperform gradient descent by reaching the centre in just a few steps. But after choosing learning rate (or step size) values for each optimiser, as shown above in @fig-newt-raph and @fig-grad-desc, we end up with very similar results.  Both methods move directly towards the minimum point at $\left(0, 0\right)$ immediately, with the size of each step decreasing as the slope decreases. This is of course a problem extremely well-suited to such Hessian- and gradient-based methods.
 
-![The Pure Random Search optimiser on a parabolic test surface.](../Render/para-pure-rs.pdf){#fig-pure-rs height="160mm" fig-pos='H'}
+![The Pure Random Search optimiser on a parabolic test surface.](../Render/para-pure-rs.pdf){#fig-pure-rs height="170mm" fig-pos='H'}
 
 @fig-pure-rs showcases just how lucky PRS can really be. The performance plot shows a curve quite reminiscent of that from the Newton-Raphson and gradient descent optimisers. Though the reality is that this performance was simply lucky. PRS could easily have found its best performing solution at iteration 45, or 86, or 93. Paying close attention, the best candidate solution was found on approximately the 18th iteration of the algorithm. While that sounds very optimistic, it also means the algorithm had run for approximately 82 iterations with no improvement. The fact that it got so lucky on the 18th iteration would not be something you could rely on over multiple runs, or multiple different problems. This issue only gets worse as a problem's dimensions increase. While PRS does have a uniform probability to reach any point in the search space, and does not have the issue of getting 'stuck' in any local optima, there is no guarantee of improvement as the algorithm runs.
 
@@ -485,31 +487,31 @@ This can help us identify another place where performance of PRS might suffer or
 
 If the 80th percentile of performance performs similarly to the 20th, that 60% ranking improvement is meaningless if it takes too many additional iterations. 
 
-![The Fixed Step Size Random Search optimiser on a parabolic test surface with nu=0.2.](../Render/para-rand-sear.pdf){#fig-rand-sear height="160mm" fig-pos='H'}
+![The Fixed Step Size Random Search optimiser on a parabolic test surface with $\nu=0.4$.](../Render/para-rand-sear.pdf){#fig-rand-sear height="170mm" fig-pos='H'}
 
 @fig-rand-sear shows a very different pattern from PRS. FSSRS moves towards the minimum in small, regular steps. Its performance plot falls steadily rather than in sudden drops. The grey and coloured lines stay close together. This is consistent with the updating equation in Section 3.2.3. Each candidate point lies a fixed distance from the current best point. FSSRS only nears $\left(0, 0\right)$ late in the trial, around iteration 85. On this surface, it is much slower than Newton-Raphson and gradient descent. However, through optimising the learning rate, much of this sluggishness could be alleviated.
 
 ## Unimodal: Rosenbrock
 
-![The Rosenbrock test surface.](../Render/rosen.pdf){#fig-rosen width="160mm" fig-pos='H'}
+![The Rosenbrock test surface.](../Render/rosen.pdf){#fig-rosen width="170mm" fig-pos='H'}
 
 The Rosenbrock function (@fig-rosen) is a non-convex, unimodal test surface. The global minimum of this test surface lies in a thin, curved 'valley'. While it is easy to find the valley since the slopes of the function always push a minimising optimiser toward the valley, it is a challenging task to find the true minimum since the valley itself is nearly completely flat. 
 
 
-![The Newton-Raphson optimiser on a Rosenbrock test surface with nu=0.5.](../Render/rosen-newt-raph.pdf){#fig-rosen-newt-raph height="160mm" fig-pos='H'}
+![The Newton-Raphson optimiser on a Rosenbrock test surface with $\nu=1$.](../Render/rosen-newt-raph.pdf){#fig-rosen-newt-raph height="170mm" fig-pos='H'}
 
 Now comparing @fig-rosen-newt-raph and @fig-rosen-grad-desc, the Newton-Raphson optimiser distinguishes itself from gradient descent by a large margin. It was able to find the optimum approximately midway through this trial. Its performance value drops sharply within the first five iterations, having found the valley, though outside of the bounds of the trace plot. No new points appear in the trace plots during this time. The trace then enters from the top of the window. It follows the valley floor for most of the trial, heading directly toward the global minimum via the valley. Gradient descent (@fig-rosen-grad-desc) starts to show its limitations. When the slope drastically changes from relatively steep, to almost completely flat, gradient descent all but moves at a standstill. Increasing the learning rate may be the first idea an analyst may have to account for this, but doing so only makes the steep section of this surface worse. In fact, gradient descent fails to converge if the learning rate parameter is set slightly too high. This additional Hessian information allows Newton-Raphson to adjust its step size enough to account for this drastic change in slope.
 
 
-![The gradient descent optimiser on a Rosenbrock test surface with nu=0.0001.](../Render/rosen-grad-desc.pdf){#fig-rosen-grad-desc height="160mm" fig-pos='H'}
+![The gradient descent optimiser on a Rosenbrock test surface with $\nu=0.0001$.](../Render/rosen-grad-desc.pdf){#fig-rosen-grad-desc height="170mm" fig-pos='H'}
 
 
 
-![The Pure Random Search optimiser on a Rosenbrock test surface.](../Render/rosen-pure-rs.pdf){#fig-rosen-pure-rs height="160mm" fig-pos='H'}
+![The Pure Random Search optimiser on a Rosenbrock test surface.](../Render/rosen-pure-rs.pdf){#fig-rosen-pure-rs height="170mm" fig-pos='H'}
 
 PRS finds the valley quickly on the Rosenbrock surface. Its best value falls within the valley, surprisingly close to zero within the first five iterations. After this, any improvements are too small to see on the performance plot. Inspecting the function evaluations through the grey line and white crosses shows that most evaluations perform far worse than the best point. It shows that PRS has a difficult time improving its solution when it performs well.
 
-![The Fixed Step Size Random Search on a Rosenbrock test surface with nu=0.2.](../Render/rosen-rand-sear.pdf){#fig-rosen-rand-sear height="160mm" fig-pos='H'}
+![The Fixed Step Size Random Search on a Rosenbrock test surface with $\nu=0.4$.](../Render/rosen-rand-sear.pdf){#fig-rosen-rand-sear height="170mm" fig-pos='H'}
 
 FSSRS (@fig-rosen-rand-sear) shows a steady pattern similar to its run on the parabola. Its performance value falls smoothly. Most of its improvement occurs within the first 60 iterations. The trace moves from the lower-left corner towards the centre of the window. By iteration 100, it lies just below the valley, near $X1 = 0$, having not reached the valley floor. Its final position is similar to that of gradient descent (@fig-rosen-grad-desc).
 
@@ -517,52 +519,52 @@ FSSRS (@fig-rosen-rand-sear) shows a steady pattern similar to its run on the pa
 ## Multimodal: Rastrigin
 
 
-![The Rastrigin test surface.](../Render/rastrigin.pdf){#fig-rast width="160mm" fig-pos='H'}
+![The Rastrigin test surface.](../Render/rastrigin.pdf){#fig-rast width="170mm" fig-pos='H'}
 
 we enter the space of multimodal test surfaces with the Rastrigin test surface (@fig-rast). This a highly multimodal surface. It resembles a shallow 'bowl' with a regular grid of divots pushed into it. Each divot could trap an optimiser that simply follows the slope. Although, the local optima are quite close together, which could allow for optimisers to slowly find their way into local optima closer and closer to the global minimum, since it only takes a small step to find a potentially better solution.
 
 
-![The Newton-Raphson optimiser on a Rastrigin test surface with nu=0.5.](../Render/rastrigin-newt-raph.pdf){#fig-rast-newt-raph height="160mm" fig-pos='H'}
+![The Newton-Raphson optimiser on a Rastrigin test surface with $\nu=1$.](../Render/rastrigin-newt-raph.pdf){#fig-rast-newt-raph height="170mm" fig-pos='H'}
 
 Newton-Raphson (@fig-rast-newt-raph) does not improve on its starting point on the Rastrigin surface. Its best candidate solution has a performance of approximately 67 for the entire trial. The white cross shows where the optimiser settled, just above its starting point. It appears to converge on a separate local minimum to the position it had started on. This means that it was able to escape one local optimum, just to settle in a worse one.
 
 
-![The gradient descent optimiser on a Rastrigin test surface with nu=0.2.](../Render/rastrigin-grad-desc.pdf){#fig-rast-grad-desc height="160mm" fig-pos='H'}
+![The gradient descent optimiser on a Rastrigin test surface with $\nu=0.04$.](../Render/rastrigin-grad-desc.pdf){#fig-rast-grad-desc height="170mm" fig-pos='H'}
 
 Gradient descent (@fig-rast-grad-desc) behaves erratically on the Rastrigin surface. The grey line fluctuates widely throughout the trial. The best candidate solution improves only a few times. The best points appear as separate dots rather than a connected path. It performs about as erratically as PRS on the parabolic surface (@fig-pure-rs). If we look at the y-axis of the performance graph, gradient descent performs far worse than any of the competing optimisers. @fig-rast-grad-desc and @fig-rast-newt-raph show how 'deceptive' surfaces can make a seemingly stable and well-performing optimiser behave extremely poorly.
 
-![The Pure Random Search optimiser on a Rastrigin test surface.](../Render/rastrigin-pure-rs.pdf){#fig-rast-pure-rs height="160mm" fig-pos='H'}
+![The Pure Random Search optimiser on a Rastrigin test surface.](../Render/rastrigin-pure-rs.pdf){#fig-rast-pure-rs height="170mm" fig-pos='H'}
 
 PRS (@fig-rast-pure-rs) draws each point independently of previous points (Section 3.2.3). Its best points are spread across the window rather than clustered near its start. Its best value falls sharply within the first ten iterations. It makes its last visible improvement around iteration 40. The best candidate solution ends near in one of the local minima close to the global minimum.
 
-![The Fixed Step Size Random Search on a Rastrigin test surface with nu=0.2.](../Render/rastrigin-rand-sear.pdf){#fig-rast-rand-sear height="160mm" fig-pos='H'}
+![The Fixed Step Size Random Search on a Rastrigin test surface with $\nu=1$.](../Render/rastrigin-rand-sear.pdf){#fig-rast-rand-sear height="170mm" fig-pos='H'}
 
 FSSRS (@fig-rast-rand-sear) stays close to its starting point on the Rastrigin surface. Its best value drops sharply within the first few iterations. Two small improvements follow, near iterations 24 and 32. The best value then stabilises from around iteration 32. The trace never leaves the corner where it started. Despite this, it still performs to a similar scale as @fig-rast-pure-rs. Notably both of the random, derivative-free methods have outperformed both of the derivative methods.
 
 
 ## Multimodal: Styblinski-Tang
 
-![The Styblinski-Tang test surface.](../Render/styb-tang.pdf){#fig-styb-tang width="160mm" fig-pos='H'}
+![The Styblinski-Tang test surface.](../Render/styb-tang.pdf){#fig-styb-tang width="170mm" fig-pos='H'}
 
 The Styblinski-Tang function (@fig-styb-tang) is a multimodal test function which, in comparison to the Rastrigin function (@fig-rast), is potentially more likely to show the issues that come with multimodal surfaces. Since each local optimum is in a relatively large sector and is locally convex in these sectors, optimisers will have more trouble finding their way out of the incorrect local minimum due to their surrounding points 'funnelling' them deeper into each divot. Small, random perturbations in the optimiser's algorithm might allow for jumps into nearby local optima as seen before in @fig-rast, but it is much harder to take a step large enough to escape a local optimum here. 
 
 Due to the global minimum being in the bottom left, the optimisers will instead uniformly start at a point in the upper right.
 
-![The Newton-Raphson optimiser on a Styblinski-Tang test surface with nu=0.5.](../Render/styb-tang-newt-raph.pdf){#fig-st-newt-raph height="160mm" fig-pos='H'}
+![The Newton-Raphson optimiser on a Styblinski-Tang test surface with $\nu=1$.](../Render/styb-tang-newt-raph.pdf){#fig-st-newt-raph height="170mm" fig-pos='H'}
 
 Newton-Raphson's (@fig-st-newt-raph) best value stabilises at about -50 around iteration 10. It converges in the upper-right basin, which is the shallowest of the four. It does not reach the global minimum in the lower-left basin.
 
-![The gradient descent optimiser on a Styblinski-Tang test surface with nu=0.2.](../Render/styb-tang-grad-desc.pdf){#fig-st-grad-desc height="160mm" fig-pos='H'}
+![The gradient descent optimiser on a Styblinski-Tang test surface with $\nu=0.03$.](../Render/styb-tang-grad-desc.pdf){#fig-st-grad-desc height="170mm" fig-pos='H'}
 
 Within five iterations in @fig-st-grad-desc, the gradient descent optimiser's performance jumps to $10^{136}$. It stays at this level for the rest of the trial. The best point never moves from its starting position. This is likely due to having started on an outward-facing slope.
 
 
-![The Pure Random Search optimiser on a Styblinski-Tang test surface.](../Render/styb-tang-pure-rs.pdf){#fig-st-pure-rs height="160mm" fig-pos='H'}
+![The Pure Random Search optimiser on a Styblinski-Tang test surface.](../Render/styb-tang-pure-rs.pdf){#fig-st-pure-rs height="170mm" fig-pos='H'}
 
 Of the four optimisers applied to the Styblinski-Tang surface, only PRS (@fig-st-pure-rs) reaches the lower-left basin. Its first improvement, near iteration 3, lands in the upper-right basin. Its best performance value then sits close to level that Newton-Raphson in @fig-st-newt-raph achieved. Around iteration 17, PRS samples a point in the lower-left basin. Its best value drops to about -75. This is its last visible improvement. The best point ends close to the global minimum.
 
 
-![The Fixed Step Size Random Search on a Styblinski-Tang test surface with nu=0.2.](../Render/styb-tang-rand-sear.pdf){#fig-st-rand-sear height="160mm" fig-pos='H'}
+![The Fixed Step Size Random Search on a Styblinski-Tang test surface with $\nu=0.3$.](../Render/styb-tang-rand-sear.pdf){#fig-st-rand-sear height="170mm" fig-pos='H'}
 
 FSSRS's (@fig-st-rand-sear) best candidate solution stabilises at about -50 around iteration 28. Like Newton-Raphson in @fig-st-newt-raph, it settles in the upper-right basin. It takes nearly three times as many iterations to get there. This resembles its run on the Rastrigin surface, where it also stayed near its starting point.
 
@@ -589,6 +591,10 @@ Perhaps we could consider _unique_ function calls. This may be a better fit. GAs
 
 The mean score rises more slowly. It climbs steadily until around generation 25. After this, it fluctuates around 8 for the rest of the run. A mean of 8 suggests that, on average, about 9 of 10 drones complete the course.
 These results should be read alongside their cost. Reaching generation 25 required 1250 function calls. This is far more than the 100 function calls given to each optimiser on the test surfaces.
+
+## Comparisons
+
+![Optimiser performance on different objective surfaces.](../Render/all_trace.pdf){#fig-st-pure-rs height="170mm" fig-pos='H'}
 
 # Results
 

@@ -18,7 +18,7 @@ handlers(global=TRUE)
 # Major effect on p_obj runtime and size of plot files. (1 is added to resolution to centralise).
 # Exponential growth with DIM (resolution^DIM)
 # resolution+1 = Number of values to be evaluated per dimension.
-resolution <- 500
+resolution <- 100
 DIM <- 2               # Plots are defined for 2 dimensions.
 iterlim <- 100 # amount of total iterations (function calls) allowed.
 trials <- 1000  # amount of repeated trials for each objective and optimiser pairing
@@ -665,6 +665,21 @@ print_monitor <- function(ga_model){
   #print(paste("Population iteration:", ga_model@iter))
 }
 
+init_global_store_monitor <- function(){
+  ga_trace <<- new_tibble(x= list(iteration=vector(mode="integer",length=0), 
+                                  X1       =vector(mode="double",length=0), 
+                                  X2       =vector(mode="double",length=0)),
+                          nrow=0)
+}
+
+global_store_monitor <- function(ga_model){
+  # store all populations to global var, includes the iteration generated in
+  ga_trace <<- bind_rows(ga_trace,
+                         bind_cols("iteration"=ga_model@iter,
+                                   as_tibble(ga_model@population,
+                                             .name_repair=~make.names(1:2))))
+}
+
 # plot_monitor <- function(model,.surface=p_obj) {
 #   best <- which.max(model@fitness)
 #   pop <- model@population |> as_tibble() |> bind_cols(Iteration=model@iter)
@@ -726,7 +741,7 @@ generate_trace_ga <- function(obj, up, trials=100,
   #skipping ga seed option. Unsure if it's required when seed is handled by future.
   
   trace <- foreach(t = 1:trials,.combine=bind_rows) %do% { 
-    init_print_monitor()
+    init_global_store_monitor()
     fitted <- ga(type = "real-valued",
                  fitness = ga_obj,
                  crossover = crossover,
@@ -735,10 +750,11 @@ generate_trace_ga <- function(obj, up, trials=100,
                  upper = rep(obj$bounds[2],times=2), 
                  popSize = pop,
                  maxiter = .iterlim, 
-                 monitor = print_monitor)
+                 monitor = global_store_monitor)
     
-    trace_trial <- read_csv(file="../Populations/ga_trace.csv",col_names=c("iteration", "X1","X2")) |> suppressMessages() |> 
-      bind_cols(trial = t) |> relocate(trial)
+    # trace_trial <- read_csv(file="../Populations/ga_trace.csv",col_names=c("iteration", "X1","X2")) |> suppressMessages() |> 
+    #   bind_cols(trial = t) |> relocate(trial)
+    trace_trial <- bind_cols(trial = t, ga_trace) 
   }
   
   y <- select(trace, X1,X2) |> apply(MARGIN=1,FUN=obj$func)
@@ -801,7 +817,7 @@ form_faceting_segments <- function(x,segments,trial_plotted){
   for(i in 1:n_segments){
     
     store[[i]]<- x |>
-      filter(trial==trial_plotted, iteration==1:segments[i]) |>
+      filter(trial==trial_plotted, between(iteration,1,segments[i])) |>
       bind_cols(facet=i)
     
     end_store[[i]] <- x |> 
@@ -834,7 +850,7 @@ form_faceting_segments <- function(x,segments,trial_plotted){
 plot_trace <- function(trace,
                        res=resolution,
                        surface=NULL,
-                       segments= c(1,5,10,25,50,100),
+                       segments= c(1,2,5,20,50,100),
                        trial_plotted=NULL,
                        animate=FALSE){
   
@@ -873,10 +889,21 @@ plot_trace <- function(trace,
   
   n_trials <- max(trace_data$trial)
   
+  seg <- form_faceting_segments(x=trace_data,segments,trial_plotted) 
+  # trace_segments: how much of the trace is used in each facet
+  trace_segments <- seg$segments
+  facet_names <-    seg$names 
+  segment_ends <-   seg$ends
+  
+  
   # factors affected by GA / not.
   if(up$is_ga){
     n_pop <- trace_data |> summarise(n=n(),.by=c(iteration,trial)) |> 
       slice(1) |> pull(n) 
+    
+    trace_segments <- trace_segments |> 
+      filter(iteration==max(iteration),.by=facet)
+    
     perf_subtitle  <- sprintf("Population size: %d.",n_pop)
     perf_title     <- sprintf("Behaviour of %s on %s surface.",
                               up$plot_name, obj$plot_name)
@@ -887,20 +914,18 @@ plot_trace <- function(trace,
   }
   
   trace_subtitle <- sprintf("Trial traced: %d.",trial_plotted)
+  #message(sprintf("%s on %s: %d",up$plot_name, obj$plot_name,trial_plotted))
   
-  seg <- form_faceting_segments(x=trace_data,segments,trial_plotted) 
-  # trace_segments: how much of the trace is used in each facet
-  trace_segments <- seg$segments
-  facet_names <-    seg$names 
-  segment_ends <-   seg$ends
+  # message(trial_plotted) # testing if plots are consistent over multiple runs
   
+
   if(is.null(surface)){
     surface <- generate_surface_dark(OBJ=obj,.res=res)
   }
   
   #                              plot and animate
   
-  start <- filter(trace_data,iteration==1) |> bind_cols(facet=1) # show coverage of start points on first facet.
+  # start <- filter(trace_data,iteration==1) |> bind_cols(facet=1) # show coverage of start points on first facet.
   
   p_static <- surface+
     # geom_point(data=trace_segments,aes(x=X1,y=X2),
@@ -908,10 +933,10 @@ plot_trace <- function(trace,
     scale_colour_viridis_c(option="H",begin=0.3,end=0.9)+
     # geom_point(data=start, aes(x=X1,y=X2),
     #            colour='aquamarine',shape=4,alpha=0.3)+
-    geom_point(data=segment_ends,aes(x=MinX1,y=MinX2,colour=iteration),
+    geom_point(data=segment_ends,aes(x=X1,y=X2,colour=iteration),
                alpha=0.2,size=0.2)+
-    geom_point(data=trace_segments,aes(x=MinX1,y=MinX2,colour=iteration),
-               shape=21,size=2)+
+    geom_point(data=trace_segments,aes(x=X1,y=X2,colour=iteration),
+               shape=21,size=2,alpha=1)+
     facet_wrap(facets=~facet,nrow=2,
                labeller = as_labeller(facet_names))+
     labs(colour="Iteration",
@@ -1059,6 +1084,12 @@ p_Rastrigin + labs(title="Rastrigin test surface.")
 ggsave(filename = sprintf("../Render/%s.pdf",obj_Rastrigin$file_prefix),
        width=150, height=90, units="mm", dpi=400)
 
+pd_para            <- generate_surface_dark(obj_parabola)
+pd_Rastrigin       <- generate_surface_dark(obj_Rastrigin)
+pd_Rosenbrock      <- generate_surface_dark(obj_Rosenbrock)
+pd_Styblinski_Tang <- generate_surface_dark(obj_Styblinski_Tang)
+
+
 N_OBJ <- length(OBJECTIVE_SURFACES)
 N_UP  <- length(UPDATE_PROCEDURES)
 N_TRACE <- N_UP*N_OBJ
@@ -1080,11 +1111,39 @@ traces <- foreach(i   = 1:N_TRACE,
     trace <-generate_trace(obj = OBJ,up = UP, nu = NU, trials=trials)
     toc()
     return(trace)
-    } |> progressify() # do not parallelise this. ga_trace.csv is not parallelise-friendly.
+    } |> progressify() # do not parallelise this. ga_trace.csv/ga_trace is not parallelise-friendly.
 
-plots <- foreach(TR = traces) %do% {
-  plot_trace(trace=TR)
-  } |> progressify() |> futurize() # seed not important
+surfaces <- list(pd_para,pd_Rastrigin,pd_Rosenbrock,pd_Styblinski_Tang)
+
+tic("Plots") # 62 sec sequential; 20 sec multisession
+plots <- foreach(TR   = traces ,surf = rep(surfaces,times=N_UP)
+                            ) %do% {
+  plot_trace(trace=TR, surface=surf)
+  } |> progressify() |> futurize() # seed not important here: deterministic
+toc()
+
+plots[[17]]$plot
+#plots[[18]]$plot
+#plots[[19]]$plot
+#plots[[20]]$plot
+plots[[21]]$plot
+#plots[[22]]$plot
+#plots[[23]]$plot
+#plots[[24]]$plot
+plots[[25]]$plot
+#plots[[26]]$plot
+#plots[[27]]$plot
+#plots[[28]]$plot
+plots[[29]]$plot
+#plots[[30]]$plot
+#plots[[31]]$plot
+#plots[[32]]$plot
+plots[[33]]$plot
+#plots[[34]]$plot
+#plots[[35]]$plot
+#plots[[36]]$plot
+
+
 
 all_traces <- foreach(i = 1:N_TRACE,.combine=bind_rows) %do% {
   bind_cols(trace= traces[[i]]$trace,
@@ -1094,7 +1153,7 @@ all_traces <- foreach(i = 1:N_TRACE,.combine=bind_rows) %do% {
 minimums <- all_traces |> summarise(Y=quantile(MinY,probs=0.05),.by=c(obj,up)) |> 
   filter(up != "grad-desc",up != "newt-raph") 
 
-all_traces |>
+p_all_trace <- all_traces |>
   filter(up != "grad-desc",up != "newt-raph") |>
   ggplot(aes(x=iteration, y=MinY)) +
   # stat_summary(geom="ribbon",
@@ -1115,32 +1174,41 @@ all_traces |>
   # stat_summary(geom="line",fun=median, aes(linetype='median',colour=up))+
   #geom_point(alpha=0.3,size=0.5,shape=1)+
   scale_y_log10()+
-  # scale_fill_viridis_d(option="H",begin=0.3,end=0.9, aesthetics = c("fill","colour")) +
+  scale_fill_viridis_d(option="H",begin=0.1,end=0.95, 
+                       aesthetics = c("fill","colour"),
+                       name = "Optimiser",
+                       labels = c("ga-blx"    ="GA Blend",
+                                  "ga-la"     ="GA Local A",
+                                  "ga-wa"     ="GA Whole A",
+                                  "ga-laplace"="GA Laplace",
+                                  "ga-none"   ="GA None",
+                                  "pure-rs"   ="PRS",
+                                  "rand-sear" ="FSSRS")) +
   labs(y="Y", x="Iteration",
-       title   = "Optimiser performance on different objective surfaces.",
+       title   = "Median optimiser performance on different objective surfaces.",
        subtitle= 
 "Ribbon shows interquartile range. 
 Dotted line shows 5th percentile of the best Y value.")+ 
-  scale_colour_discrete(name="Optimiser",
-                        breaks=waiver(),
-                        labels = c("ga-blx"    ="GA Blend",
-                                   "ga-la"     ="GA Local A",
-                                   "ga-wa"     ="GA Whole A",
-                                   "ga-laplace"="GA Laplace",
-                                   "ga-none"   ="GA None",
-                                   "pure-rs"   ="PRS",
-                                   "rand-sear" ="FSSRS"),
-                        aesthetics = c("fill","colour"))+
+  # scale_colour_discrete(name="Optimiser",
+  #                       breaks=waiver(),
+  #                       labels = c("ga-blx"    ="GA Blend",
+  #                                  "ga-la"     ="GA Local A",
+  #                                  "ga-wa"     ="GA Whole A",
+  #                                  "ga-laplace"="GA Laplace",
+  #                                  "ga-none"   ="GA None",
+  #                                  "pure-rs"   ="PRS",
+  #                                  "rand-sear" ="FSSRS"),
+  #                       aesthetics = c("fill","colour"))+
   #theme_bw()+
   # guides(linetype=guide_legend(
   #   title="",
   #   theme=theme(legend.key = element_rect(fill="grey",colour="#00000000"))))+
-  scale_linetype_manual(breaks=c("max","q3","median","q1","min"),
-                        values=c("max"   =1,
-                                 "q3"    =3,
-                                 "median"=2,
-                                 "q1"    =3,
-                                 "min"   =1)) +
+  # scale_linetype_manual(breaks=c("max","q3","median","q1","min"),
+  #                       values=c("max"   =1,
+  #                                "q3"    =3,
+  #                                "median"=2,
+  #                                "q1"    =3,
+  #                                "min"   =1)) +
   facet_wrap(vars(obj),scales="free_y",
              labeller = as_labeller(c(
                "styb-tang"="Styblinski-Tang",
@@ -1149,4 +1217,6 @@ Dotted line shows 5th percentile of the best Y value.")+
                "para"     ="Parabola"
              )))
 
-
+ggsave(plot=p_all_trace,
+       filename = "../Render/all_trace.pdf",
+       width=180, height=150, units="mm", dpi=400)

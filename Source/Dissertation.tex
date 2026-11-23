@@ -876,10 +876,10 @@ GA methods strange performance in some cases when values were allowed to
 be negative.
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2361}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.4306}}@{}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5000}}@{}}
 \caption{Test surfaces and the positions of their global
 minima.}\label{tbl-surfaces}\tabularnewline
 \toprule\noalign{}
@@ -1036,13 +1036,20 @@ accessible in
 To give a point of comparison, we shall also take a look at the
 behaviour of the Newton-Raphson \& gradient descent optimisers.
 
+For the GA traces, since five methods are being tested which generate
+incredibly similar plots, only a single trace plot will be shown to
+represent their performance on each surface. The remainder of the plots
+will still undergo analysis alongside the shown plot. The
+\href{https://github.com/m-yday/Hons2025-Project/tree/main/Render}{full list of figures}
+is also accessible on Github.
+
 \subsection{Unimodal: Parabola}\label{unimodal-parabola}
 
 \begin{figure}[H]
 
 \centering{
 
-\includegraphics[width=160mm,height=\textheight,keepaspectratio]{../Render/para.pdf}
+\includegraphics[width=170mm,height=\textheight,keepaspectratio]{../Render/para.pdf}
 
 }
 
@@ -1063,12 +1070,12 @@ typical behaviour patterns from as neutral a clean slate as we can find.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/para-newt-raph.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/para-newt-raph.pdf}
 
 }
 
 \caption{\label{fig-newt-raph}The Newton-Raphson optimiser on a
-parabolic test surface with nu=0.5.}
+parabolic test surface with \(\nu=1\).}
 
 \end{figure}%
 
@@ -1076,18 +1083,18 @@ parabolic test surface with nu=0.5.}
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/para-grad-desc.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/para-grad-desc.pdf}
 
 }
 
 \caption{\label{fig-grad-desc}The gradient descent optimiser on a
-parabolic test surface with nu=0.2.}
+parabolic test surface with \(\nu=0.1\).}
 
 \end{figure}%
 
 Our Hessian- and gradient-based optimisers have both performed extremely
-well, as expected! Interestingly, their traces are quite from
-indistinguishable ne another. With a learning rate parameter,
+well, as expected! Interestingly, their traces are quite
+indistinguishable from one another. With a learning rate parameter,
 \(\nu = 1\), Newton-Raphson did outperform gradient descent by reaching
 the centre in just a few steps. But after choosing learning rate (or
 step size) values for each optimiser, as shown above in
@@ -1101,7 +1108,7 @@ extremely well-suited to such Hessian- and gradient-based methods.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/para-pure-rs.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/para-pure-rs.pdf}
 
 }
 
@@ -1154,12 +1161,12 @@ additional iterations.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/para-rand-sear.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/para-rand-sear.pdf}
 
 }
 
 \caption{\label{fig-rand-sear}The Fixed Step Size Random Search
-optimiser on a parabolic test surface with nu=0.2.}
+optimiser on a parabolic test surface with \(\nu=0.4\).}
 
 \end{figure}%
 
@@ -1179,7 +1186,7 @@ learning rate, much of this sluggishness could be alleviated.
 
 \centering{
 
-\includegraphics[width=160mm,height=\textheight,keepaspectratio]{../Render/rosen.pdf}
+\includegraphics[width=170mm,height=\textheight,keepaspectratio]{../Render/rosen.pdf}
 
 }
 
@@ -1198,12 +1205,12 @@ valley itself is nearly completely flat.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rosen-newt-raph.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rosen-newt-raph.pdf}
 
 }
 
 \caption{\label{fig-rosen-newt-raph}The Newton-Raphson optimiser on a
-Rosenbrock test surface with nu=0.5.}
+Rosenbrock test surface with \(\nu=1\).}
 
 \end{figure}%
 
@@ -1230,12 +1237,12 @@ size enough to account for this drastic change in slope.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rosen-grad-desc.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rosen-grad-desc.pdf}
 
 }
 
 \caption{\label{fig-rosen-grad-desc}The gradient descent optimiser on a
-Rosenbrock test surface with nu=0.0001.}
+Rosenbrock test surface with \(\nu=0.0001\).}
 
 \end{figure}%
 
@@ -1243,7 +1250,7 @@ Rosenbrock test surface with nu=0.0001.}
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rosen-pure-rs.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rosen-pure-rs.pdf}
 
 }
 
@@ -1264,12 +1271,12 @@ improving its solution when it performs well.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rosen-rand-sear.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rosen-rand-sear.pdf}
 
 }
 
 \caption{\label{fig-rosen-rand-sear}The Fixed Step Size Random Search on
-a Rosenbrock test surface with nu=0.2.}
+a Rosenbrock test surface with \(\nu=0.4\).}
 
 \end{figure}%
 
@@ -1287,7 +1294,7 @@ gradient descent (Figure~\ref{fig-rosen-grad-desc}).
 
 \centering{
 
-\includegraphics[width=160mm,height=\textheight,keepaspectratio]{../Render/rastrigin.pdf}
+\includegraphics[width=170mm,height=\textheight,keepaspectratio]{../Render/rastrigin.pdf}
 
 }
 
@@ -1308,12 +1315,12 @@ potentially better solution.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rastrigin-newt-raph.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rastrigin-newt-raph.pdf}
 
 }
 
 \caption{\label{fig-rast-newt-raph}The Newton-Raphson optimiser on a
-Rastrigin test surface with nu=0.5.}
+Rastrigin test surface with \(\nu=1\).}
 
 \end{figure}%
 
@@ -1329,12 +1336,12 @@ just to settle in a worse one.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rastrigin-grad-desc.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rastrigin-grad-desc.pdf}
 
 }
 
 \caption{\label{fig-rast-grad-desc}The gradient descent optimiser on a
-Rastrigin test surface with nu=0.2.}
+Rastrigin test surface with \(\nu=0.04\).}
 
 \end{figure}%
 
@@ -1353,7 +1360,7 @@ seemingly stable and well-performing optimiser behave extremely poorly.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rastrigin-pure-rs.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rastrigin-pure-rs.pdf}
 
 }
 
@@ -1373,12 +1380,12 @@ in one of the local minima close to the global minimum.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/rastrigin-rand-sear.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/rastrigin-rand-sear.pdf}
 
 }
 
 \caption{\label{fig-rast-rand-sear}The Fixed Step Size Random Search on
-a Rastrigin test surface with nu=0.2.}
+a Rastrigin test surface with \(\nu=1\).}
 
 \end{figure}%
 
@@ -1398,7 +1405,7 @@ Styblinski-Tang}\label{multimodal-styblinski-tang}
 
 \centering{
 
-\includegraphics[width=160mm,height=\textheight,keepaspectratio]{../Render/styb-tang.pdf}
+\includegraphics[width=170mm,height=\textheight,keepaspectratio]{../Render/styb-tang.pdf}
 
 }
 
@@ -1425,12 +1432,12 @@ instead uniformly start at a point in the upper right.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/styb-tang-newt-raph.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/styb-tang-newt-raph.pdf}
 
 }
 
 \caption{\label{fig-st-newt-raph}The Newton-Raphson optimiser on a
-Styblinski-Tang test surface with nu=0.5.}
+Styblinski-Tang test surface with \(\nu=1\).}
 
 \end{figure}%
 
@@ -1443,12 +1450,12 @@ minimum in the lower-left basin.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/styb-tang-grad-desc.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/styb-tang-grad-desc.pdf}
 
 }
 
 \caption{\label{fig-st-grad-desc}The gradient descent optimiser on a
-Styblinski-Tang test surface with nu=0.2.}
+Styblinski-Tang test surface with \(\nu=0.03\).}
 
 \end{figure}%
 
@@ -1462,7 +1469,7 @@ outward-facing slope.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/styb-tang-pure-rs.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/styb-tang-pure-rs.pdf}
 
 }
 
@@ -1484,12 +1491,12 @@ minimum.
 
 \centering{
 
-\includegraphics[width=\linewidth,height=160mm,keepaspectratio]{../Render/styb-tang-rand-sear.pdf}
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/styb-tang-rand-sear.pdf}
 
 }
 
 \caption{\label{fig-st-rand-sear}The Fixed Step Size Random Search on a
-Styblinski-Tang test surface with nu=0.2.}
+Styblinski-Tang test surface with \(\nu=0.3\).}
 
 \end{figure}%
 
@@ -1569,6 +1576,21 @@ complete the course. These results should be read alongside their cost.
 Reaching generation 25 required 1250 function calls. This is far more
 than the 100 function calls given to each optimiser on the test
 surfaces.
+
+\subsection{Comparisons}\label{comparisons}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=\linewidth,height=170mm,keepaspectratio]{../Render/all_trace.pdf}
+
+}
+
+\caption{\label{fig-st-pure-rs}Optimiser performance on different
+objective surfaces.}
+
+\end{figure}%
 
 \section{Results}\label{results}
 
