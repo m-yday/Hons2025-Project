@@ -1,5 +1,4 @@
-################################################################################
-#                        setup + objective functions                           #
+########################   setup + objective functions   #######################
 
 library(tidyverse,attach.required = TRUE) # data tidying, visualisation + more tools
 library(gganimate) # animates graphs, illustrating behaviour of update procedures
@@ -942,26 +941,26 @@ plot_trace <- function(trace,
     labs(colour="Iteration",
          subtitle=trace_subtitle)
   
-  p_performance_simple <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
-    stat_summary(geom="ribbon",
-                 fun.min=min,fun.max=max,
-                 fill = 'black',alpha=0.5)+
-    stat_summary(geom="ribbon",
-                 fun.min=min,fun.max=max,
-                 aes(fill = iteration),alpha=0.5,show.legend = FALSE)+
-    stat_summary(geom="line",fun=min, colour='darkblue', alpha=0.5,aes(linetype="min"))+
-    scale_y_log10()+
-    scale_fill_viridis_c(option="H",begin=0.3,end=0.9) +
-    scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
-    labs(y="Y", x="Iteration",
-         title= perf_title,
-         subtitle= perf_subtitle)+ 
-    #theme_bw() +
-    guides(linetype=guide_legend(
-      title="",
-      theme=theme(legend.key=element_rect(fill="grey",colour="#00000000"))))+
-    scale_linetype_manual(values=c("min"=1))
-  
+  # p_performance_simple <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
+  #   stat_summary(geom="ribbon",
+  #                fun.min=min,fun.max=max,
+  #                fill = 'black',alpha=0.5)+
+  #   stat_summary(geom="ribbon",
+  #                fun.min=min,fun.max=max,
+  #                aes(fill = iteration),alpha=0.5,show.legend = FALSE)+
+  #   stat_summary(geom="line",fun=min, colour='darkblue', alpha=0.5,aes(linetype="min"))+
+  #   scale_y_log10()+
+  #   scale_fill_viridis_c(option="H",begin=0.3,end=0.9) +
+  #   scale_colour_viridis_c(option="H",begin=0.3,end=0.9) +
+  #   labs(y="Y", x="Iteration",
+  #        title= perf_title,
+  #        subtitle= perf_subtitle)+ 
+  #   #theme_bw() +
+  #   guides(linetype=guide_legend(
+  #     title="",
+  #     theme=theme(legend.key=element_rect(fill="grey",colour="#00000000"))))+
+  #   scale_linetype_manual(values=c("min"=1))
+  # 
   p_performance <- ggplot(data=trace_data, aes(x=iteration, y=MinY)) +
     stat_summary(geom="ribbon",
                  fun.min=min,fun.max=max,
@@ -995,16 +994,16 @@ plot_trace <- function(trace,
                                    "q1"    =3,
                                    "min"   =1))
   
-  p_full_simple <- p_performance_simple/p_static +
-    plot_layout(heights=unit(c(25,1),c('mm','null')))
-  
+  # p_full_simple <- p_performance_simple/p_static +
+  #   plot_layout(heights=unit(c(25,1),c('mm','null')))
+  # 
   p_full <- p_performance/p_static +
     plot_layout(heights=unit(c(25,1),c('mm','null')))
   
-  ggsave(plot=p_full_simple,
-         filename = sprintf("../Render/%s-%s-simple.pdf",
-                            obj$file_prefix, up$optim_name),
-         width=180, height=150, units="mm", dpi=400)
+  # ggsave(plot=p_full_simple,
+  #        filename = sprintf("../Render/%s-%s-simple.pdf",
+  #                           obj$file_prefix, up$optim_name),
+  #        width=180, height=150, units="mm", dpi=400)
   
   ggsave(plot=p_full,
          filename = sprintf("../Render/%s-%s.pdf",
@@ -1012,10 +1011,8 @@ plot_trace <- function(trace,
          width=180, height=150, units="mm", dpi=400)
   
   if(!animate){
-    return(list(plot_simple= p_full_simple,
-                plot=        p_full,
-                perf_simple= p_performance_simple,
-                perf=        p_performance))
+    return(list(plot= p_full,
+                perf= p_performance))
   }
   
   p_anim <-
@@ -1037,11 +1034,9 @@ plot_trace <- function(trace,
             path="../Render",
             animation=p_anim)
   
-  return(list(plot_simple= p_full_simple,
-              plot=        p_full,
-              perf_simple= p_performance_simple,
-              perf=        p_performance,
-              anim=        p_anim))
+  return(list(plot= p_full,
+              perf= p_performance,
+              anim= p_anim))
 }
 
 
@@ -1122,26 +1117,57 @@ plots <- foreach(TR   = traces ,surf = rep(surfaces,times=N_UP)
   } |> progressify() |> futurize() # seed not important here: deterministic
 toc()
 
-plots[[17]]$plot
-#plots[[18]]$plot
-#plots[[19]]$plot
-#plots[[20]]$plot
-plots[[21]]$plot
-#plots[[22]]$plot
-#plots[[23]]$plot
-#plots[[24]]$plot
-plots[[25]]$plot
-#plots[[26]]$plot
-#plots[[27]]$plot
-#plots[[28]]$plot
-plots[[29]]$plot
-#plots[[30]]$plot
-#plots[[31]]$plot
-#plots[[32]]$plot
-plots[[33]]$plot
-#plots[[34]]$plot
-#plots[[35]]$plot
-#plots[[36]]$plot
+# parabola
+
+plots[[ 1]]$plot # gradient descent
+plots[[ 5]]$plot # Newton-Raphson
+plots[[ 9]]$plot # PRS
+plots[[13]]$plot # FSSRS
+
+plots[[17]]$plot # no crossover
+plots[[21]]$plot # whole arithmetic
+plots[[25]]$plot # local arithmetic
+plots[[29]]$plot # blend
+plots[[33]]$plot # Laplace
+
+# Rastrigin
+
+plots[[ 2]]$plot # gradient descent
+plots[[ 6]]$plot # Newton-Raphson
+plots[[10]]$plot # PRS
+plots[[14]]$plot # FSSRS
+
+plots[[18]]$plot # no crossover
+plots[[22]]$plot # whole arithmetic
+plots[[26]]$plot # local arithmetic
+plots[[30]]$plot # blend
+plots[[34]]$plot # Laplace
+
+# Rosenbrock
+
+plots[[ 3]]$plot # gradient descent
+plots[[ 7]]$plot # Newton-Raphson
+plots[[11]]$plot # PRS
+plots[[15]]$plot # FSSRS
+
+plots[[19]]$plot # no crossover
+plots[[23]]$plot # whole arithmetic
+plots[[27]]$plot # local arithmetic
+plots[[31]]$plot # blend
+plots[[35]]$plot # Laplace
+
+# Styblinski-Tang
+
+plots[[ 4]]$plot # gradient descent
+plots[[ 8]]$plot # Newton-Raphson
+plots[[12]]$plot # PRS
+plots[[16]]$plot # FSSRS
+
+plots[[20]]$plot # no crossover
+plots[[24]]$plot # whole arithmetic
+plots[[28]]$plot # local arithmetic
+plots[[32]]$plot # blend
+plots[[36]]$plot # Laplace
 
 
 
